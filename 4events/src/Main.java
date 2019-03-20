@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Main {
-    private static final String CONFIG_JSON_PATH = "./4events/res/config.json";
+    private static final String CONFIG_JSON_PATH = "config.json";
 
     public static void main(String args[]) {
         Path configPath = Paths.get(CONFIG_JSON_PATH);
@@ -36,6 +36,7 @@ public class Main {
          */
         jsonConfigReader (String jsonPath) {
             try (InputStream inputStream = new FileInputStream(jsonPath) ) {
+                // settings.json is always in the same path, so no need to check if we're in a jar or not
                 JSONTokener tokener = new JSONTokener(inputStream);
                 jsonContent = new JSONObject(tokener);
 
