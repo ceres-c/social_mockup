@@ -2,6 +2,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +19,11 @@ public class Main {
 
         Menu menu = new Menu(myConnector);
         menu.printWelcome();
-        menu.printFields();
+        //menu.printFieldsName(); // TODO use this function for "help" section, printing available fields
+        // TODO REMOVE following testing code
+        Event game = new SoccerGame("soccer_game", "Test description");
+        menu.fillEventFields(game);
+        // TODO REMOVE END
 
         myConnector.closeDb();
         menu.printExit();

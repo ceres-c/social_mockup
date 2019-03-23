@@ -5,12 +5,12 @@ import org.json.JSONTokener;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Objects;
+
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 class Menu {
     private static final String MENU_JSON_PATH = "res/IT_MenuDescr.json";
@@ -37,9 +37,39 @@ class Menu {
     }
 
     /**
+     * Fills all the fields of a given Event object
+     * //TODO Finish this insertion method
+     */
+    void fillEventFields(Event event) {
+        EventFactory factory = new EventFactory(myConnector);
+        jsonTranslator eventJson = new jsonTranslator(Event.getJsonPath());
+
+        for (String eventType: myConnector.getCategories()) {
+            Event game = factory.createEvent(eventType);
+            System.out.println(game.getCatName() + '\n');
+
+            LinkedHashMap<String, Class<?>> eventFieldsMap = game.getFields();
+
+            Iterator iterator = eventFieldsMap.entrySet().iterator(); // Get an iterator for our map
+
+            while(iterator.hasNext()) {
+                Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+                String inputDescription = eventJson.getName( (String)entry.getKey() );
+                Object userInput = InputManager.genericInput(inputDescription, (Class)entry.getValue());
+                if (userInput == null)
+                    return; // TODO This should probably be changed to an Exception
+                else {
+                    event.setField( (String)entry.getKey(), userInput);
+                }
+
+            }
+        }
+    }
+
+    /**
      * Prints name and description of available categories' fields
      */
-    void printFields() {
+    void printFieldsName() {
         System.out.println(menuTranslation.getTranslation("categoryList"));
 
         EventFactory factory = new EventFactory(myConnector);
@@ -51,14 +81,14 @@ class Menu {
 
             int maxLength = 0;
 
-            for (String field : game.getFields()) { // Traverse all the names and...
+            for (String field : game.getFieldsName()) { // Traverse all the names and...
                 int length = eventJson.getName(field).length();
                 if (length > maxLength)
                     maxLength = length; // ...find the longest
             }
             maxLength += 3; // Add some more char to allow spacing between the longest name and its description
 
-            for (String field : game.getFields()) {
+            for (String field : game.getFieldsName()) {
                 StringBuffer outputBuffer = new StringBuffer();
                 outputBuffer.append("  ");
                 outputBuffer.append(eventJson.getName(field));
