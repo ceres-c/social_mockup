@@ -1,5 +1,7 @@
+import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 public class InputManager {
 
@@ -17,8 +19,7 @@ public class InputManager {
         if (type.equals(Integer.class)) {
             return (T) inputInteger(inputDescription);
         } else if (type.equals(Double.class)) {
-            System.out.println("Doubly doo");
-            return (T) new Double(0.0); // TODO NEED REAL INPUT FUNCTION
+            return (T) inputDouble(inputDescription);
         } else if (type.equals(String.class)) {
             return (T) inputString(inputDescription);
         } else if (type.equals(Character.class)) {
@@ -43,6 +44,31 @@ public class InputManager {
             return null; // CHECK FOR NULL-OBJECT!
     }
 
+    public static Double inputDouble(String inputDescription) {
+        boolean validInput;
+        boolean checkPattern;
+        Double inputNumber = 0.00; // Just to shut the compiler up, this variable WILL be initialized once we return
+        Pattern pattern = Pattern.compile("^\\d+(,\\d{3})*(\\.\\d{1,2})?$");
+        do {
+            System.out.print(inputDescription + ": ");
+            String input = in.nextLine().trim();
+            checkPattern = pattern.matcher(input).matches();
+            if (input.length() == 0)
+                return null; // CHECK FOR NULL-OBJECT!
+            try {
+                validInput = true;
+                inputNumber = Double.parseDouble(input);
+            } catch (NumberFormatException exception) {
+                validInput = false;
+                System.out.println("ALERT: Number expected!");
+            }
+            if(!checkPattern){
+                System.out.print("ALERT: Insert a number in pattern (#.##)!\n");
+            }
+        } while (!validInput || !checkPattern);
+        return inputNumber;
+    }
+
     public static Character inputChar(String inputDescription) {
         System.out.print(inputDescription + ": ");
         String input = in.nextLine().trim();
@@ -52,8 +78,7 @@ public class InputManager {
             return null; // CHECK FOR NULL-OBJECT!
     }
 
-    public static Integer inputInteger(String inputDescription)
-    {
+    public static Integer inputInteger(String inputDescription) {
         boolean validInput;
         Integer inputNumber = 0; // Just to shut the compiler up, this variable WILL be initialized once we return
         do {
@@ -66,7 +91,7 @@ public class InputManager {
                 inputNumber = Integer.parseInt(input);
             } catch (NumberFormatException exception) {
                 validInput = false;
-                System.out.println("ALERT: Number expected!");
+                System.out.println("ALERT: Integer  number expected!");
             }
         } while (!validInput);
         return inputNumber;
