@@ -31,6 +31,8 @@ public class InputManager {
             return (T) inputCalendar(inputDescription);
         } else if (type.equals(Sex.class)) {
             return (T) Sex.sexInput(inputDescription);
+        } else if (type.equals(MyDuration.class)) {
+            return (T) MyDuration.durationInput(inputDescription);
         } else {
             System.out.println("WTF? " + type);
             return (T) type; // TODO REMOVE THIS
