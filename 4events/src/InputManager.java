@@ -1,5 +1,8 @@
-import java.text.DecimalFormat;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -25,10 +28,11 @@ public class InputManager {
         } else if (type.equals(Character.class)) {
             return (T) inputChar(inputDescription);
         } else if (type.equals(Calendar.class)) {
-            System.out.println("Save the date");
-            return (T) Calendar.getInstance(); // TODO NEED REAL INPUT FUNCTION
+            return (T) inputCalendar(inputDescription);
         } else if (type.equals(Sex.class)) {
             return (T) Sex.sexInput(inputDescription);
+        } else if (type.equals(MyDuration.class)) {
+            return (T) MyDuration.durationInput(inputDescription);
         } else {
             System.out.println("WTF? " + type);
             return (T) type; // TODO REMOVE THIS
@@ -48,11 +52,12 @@ public class InputManager {
         boolean validInput;
         boolean checkPattern;
         Double inputNumber = 0.00; // Just to shut the compiler up, this variable WILL be initialized once we return
-        Pattern pattern = Pattern.compile("^\\d+(,\\d{3})*(\\.\\d{1,2})?$");
+        Pattern pattern = Pattern.compile("^\\d{1,3}(,\\d{3})*(\\.\\d{1,2})?$");
         do {
-            System.out.print(inputDescription + ": ");
+            System.out.print(inputDescription + " (#.##): ");
             String input = in.nextLine().trim();
             checkPattern = pattern.matcher(input).matches();
+            input = input.replaceAll(",", "");
             if (input.length() == 0)
                 return null; // CHECK FOR NULL-OBJECT!
             try {
@@ -95,5 +100,32 @@ public class InputManager {
             }
         } while (!validInput);
         return inputNumber;
+    }
+
+    public static Calendar inputCalendar(String inputDescription){
+        boolean validInput;
+        Calendar cal = Calendar.getInstance();
+        do {
+            System.out.print(inputDescription + " (DD/MM/YYYY) or (DD/MM/YYYY HH:MM:SS): ");
+            String input = in.nextLine();
+            DateFormat dfDate = new SimpleDateFormat("dd/MM/yyyy");
+            DateFormat dfDateAndTime = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            if (input.length() == 0)
+                return null;
+            try {
+                validInput=true;
+                Date date = dfDate.parse(input);
+                cal.setTime(date);
+                try {
+                    Date dateAndTime = dfDateAndTime.parse(input);
+                    cal.setTime(dateAndTime);
+                }catch (ParseException e) {
+                }
+            } catch (ParseException e) {
+                validInput=false;
+                System.out.println("ALERT: wrong pattern");
+            }
+        } while (!validInput);
+        return cal;//If you want to print a calendar you need to convert it to a date object first
     }
 }

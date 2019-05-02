@@ -30,7 +30,7 @@ abstract class Event {
     public  Calendar    deadline;
     public  String      location;
     public  Calendar    startDate;
-    public  Calendar    duration; // Calendar object subsequent to startDate used to calculate a time interval
+    public  MyDuration  duration; // Calendar object subsequent to startDate used to calculate a time interval
     public  Double      cost;
     public  String      inQuota;
     public  Calendar    endDate;
