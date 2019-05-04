@@ -1,3 +1,8 @@
+package impl;
+
+import impl.fields.MyDuration;
+import impl.fields.Sex;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -13,12 +18,11 @@ public class InputManager {
     /**
      * Given a Class object, this method chooses the right kind of input needed
      * WARNING: return is null if the user did not write anything!
-     * // TODO probably we should move to input methods in relevant classes to allow logical sanitization of user input
      * @param inputDescription A descriptive text to tell the user which input is required
      * @param type java.lang.Class type of needed input
      * @return A generic T which contains user input and HAS to be cast to the right type - WARNING: can be null!
      */
-    public static <T> T genericInput(String inputDescription, Class type) {
+    static <T> T genericInput(String inputDescription, Class type) {
         if (type.equals(Integer.class)) {
             return (T) inputInteger(inputDescription);
         } else if (type.equals(Double.class)) {
@@ -51,7 +55,7 @@ public class InputManager {
     public static Double inputDouble(String inputDescription) {
         boolean validInput;
         boolean checkPattern;
-        Double inputNumber = 0.00; // Just to shut the compiler up, this variable WILL be initialized once we return
+        double inputNumber = 0.00; // Just to shut the compiler up, this variable WILL be initialized once we return
         Pattern pattern = Pattern.compile("^\\d{1,3}(,\\d{3})*(\\.\\d{1,2})?$");
         do {
             System.out.print(inputDescription + " (#.##): ");
@@ -109,7 +113,7 @@ public class InputManager {
             System.out.print(inputDescription + " (DD/MM/YYYY) or (DD/MM/YYYY HH:MM:SS): ");
             String input = in.nextLine();
             DateFormat dfDate = new SimpleDateFormat("dd/MM/yyyy");
-            DateFormat dfDateAndTime = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            DateFormat dfDateAndTime = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             if (input.length() == 0)
                 return null;
             try {
@@ -126,6 +130,6 @@ public class InputManager {
                 System.out.println("ALERT: wrong pattern");
             }
         } while (!validInput);
-        return cal;//If you want to print a calendar you need to convert it to a date object first
+        return cal; // If you want to print a calendar you need to convert it to a date object first
     }
 }

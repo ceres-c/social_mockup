@@ -1,3 +1,7 @@
+package impl;
+
+import impl.fields.MyDuration;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -5,11 +9,14 @@ import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
+import interfaces.LegalObject;
+import interfaces.ReflectionInterface;
+
 /**
  * This abstract class represents generic events that will be inflected
  * into specific categories via extending classes
  */
-abstract class Event {
+abstract class Event implements LegalObject, ReflectionInterface {
     public enum State {
         VALID,
         OPEN,
@@ -30,7 +37,7 @@ abstract class Event {
     public  Calendar    deadline;
     public  String      location;
     public  Calendar    startDate;
-    public  MyDuration  duration; // Calendar object subsequent to startDate used to calculate a time interval
+    public  MyDuration  duration; // Object used to store a time difference between two Calendars
     public  Double      cost;
     public  String      inQuota;
     public  Calendar    endDate;
@@ -86,7 +93,7 @@ abstract class Event {
      * A method to get the names of public fields of a class and its fathers
      * @return an ArrayList of Strings
      */
-    ArrayList<String> getFieldsName(){
+    public ArrayList<String> getFieldsName(){
 
         Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
         Field[] currentFields = this.getClass().getDeclaredFields(); // Both public and private fields
@@ -112,7 +119,10 @@ abstract class Event {
         return returnFields;
     }
 
-    public void setField(String fieldName, Object content) {
+    /**
+     * A method to set a field to a given object passed from the caller
+     */
+    public void setAttribute(String fieldName, Object content) {
         try {
             Field field = this.getClass().getSuperclass().getDeclaredField( fieldName ); // Need to get the super class as this is an ancestor of real instance classes
             field.set(this, content);
@@ -125,4 +135,39 @@ abstract class Event {
         }
     }
 
+    /**
+     * A method to check if the values input by an user are logically valid, used before saving to the DB
+     * @return boolean:
+     *      - True if legal
+     * @throws IllegalStateException if user input isn't legal
+     */
+    public boolean isLegal() throws IllegalStateException {
+        Calendar currentDate = Calendar.getInstance();
+
+        Calendar startPlusDuration = Calendar.getInstance(startDate.getTimeZone());
+        startPlusDuration.setTime(startDate.getTime()); // Thanks Java, mutables are the way to go.
+        startPlusDuration.add(Calendar.MINUTE, duration.sizeOf()); // Now set the damn date
+
+        if (startDate.before(deadline)) throw new IllegalStateException ("ALERT: start date prior than specified deadline");
+        if (currentDate.after(deadline)) throw new IllegalStateException ("ALERT: deadline in the past");
+        if (endDate.before(startDate) && !endDate.equals(startDate)) throw new IllegalStateException ("ALERT: end date prior start date");
+        if (endDate.before(startPlusDuration)) throw new IllegalStateException ("ALERT: end date comes before start date + duration");
+        return true;
+    }
+
+    @Override
+    public String toString () {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Title: ").append(title).append("\n");
+        sb.append("Partecipants num: ").append(partecipantsNum).append("\n");
+        sb.append("Deadline: ").append(deadline.getTime()).append("\n");
+        sb.append("Location: ").append(location).append("\n");
+        sb.append("Start date: ").append(startDate.getTime()).append("\n");
+        sb.append("Duration: ").append(duration.sizeOf()).append("\n");
+        sb.append("Cost: ").append(cost).append("\n");
+        sb.append("In Quota: ").append(inQuota).append("\n");
+        sb.append("End Date: ").append(endDate.getTime()).append("\n");
+        sb.append("Notes: ").append(notes).append("\n");
+        return sb.toString();
+    }
 }

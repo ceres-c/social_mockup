@@ -1,7 +1,9 @@
+package impl;
+
 import java.util.ArrayList;
 
 /**
- * A factory class to generate Event subclasses
+ * A factory class to generate impl.Event subclasses
  */
 class EventFactory {
     private Connector myConnector;
@@ -13,7 +15,7 @@ class EventFactory {
     /**
      *
      * @param className A String referring to the first column in categories table of the DB
-     * @return  SoccerGame  if provided soccer_game
+     * @return  impl.SoccerGame  if provided soccer_game
      *          void        if provided any other string
      * @throws IllegalArgumentException if given className isn't a known type
      */

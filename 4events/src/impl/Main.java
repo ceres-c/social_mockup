@@ -1,8 +1,9 @@
+package impl;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,9 +14,14 @@ public class Main {
     private static final String CONFIG_JSON_PATH = "config.json";
 
     public static void main(String args[]) {
+        Connector myConnector = null; // Declared null to shut the compiler up, on usage it will always be properly instanced
         Path configPath = Paths.get(CONFIG_JSON_PATH);
         jsonConfigReader config = new jsonConfigReader(configPath.toString());
-        Connector myConnector = new Connector(config.getDBURL(), config.getDBUser(), config.getDBPassword());
+        try {
+            myConnector = new Connector(config.getDBURL(), config.getDBUser(), config.getDBPassword());
+        } catch (IllegalStateException e) {
+            System.exit(1); // Error is printed by the impl.Connector constructor
+        }
 
         Menu menu = new Menu(myConnector);
         menu.printWelcome();

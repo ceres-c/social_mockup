@@ -1,3 +1,5 @@
+package impl;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -70,6 +72,15 @@ class Connector {
         return returnAList;
     }
 
+    /**
+     * Fetches a category's name and description from the database given its internal name (event_type in db)
+     * @return  an ArrayList of String.
+     *              - 1st element: Category's full name
+     *              - 2nd element: Category's description
+     *          If the category does not exist, empty ArrayList.
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws NoSuchElementException If given category does not exist in public.categories table
+     */
     ArrayList<String> getCategoryDescription(String categoryName) throws IllegalStateException, NoSuchElementException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 

@@ -1,3 +1,5 @@
+package impl;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -20,7 +22,7 @@ class Menu {
 
     /**
      *
-     * @param dbConnector a Connector to the local database
+     * @param dbConnector a impl. Connector to the local database
      */
     Menu (Connector dbConnector) {
         this.myConnector = dbConnector;
@@ -37,10 +39,11 @@ class Menu {
     }
 
     /**
-     * Fills all the fields of a given Event object
+     * Fills all the fields of a given impl.Event object
      * //TODO Finish this insertion method
+     * @throws IllegalStateException if user input is logically inconsistent (start date after end date and so on)
      */
-    void fillEventFields(Event event) {
+    void fillEventFields(Event event) throws IllegalStateException {
         EventFactory factory = new EventFactory(myConnector);
         jsonTranslator eventJson = new jsonTranslator(Event.getJsonPath());
 
@@ -59,10 +62,11 @@ class Menu {
                 if (userInput == null)
                     return; // TODO This should probably be changed to an Exception
                 else {
-                    event.setField( (String)entry.getKey(), userInput);
+                    event.setAttribute( (String)entry.getKey(), userInput);
                 }
-
             }
+
+            event.isLegal();
         }
     }
 
