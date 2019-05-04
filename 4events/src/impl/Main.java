@@ -25,11 +25,18 @@ public class Main {
 
         Menu menu = new Menu(myConnector);
         menu.printWelcome();
+
         //menu.printFieldsName(); // TODO use this function for "help" section, printing available fields
         // TODO REMOVE following testing code
         Event game = new SoccerGame("soccer_game", "Test description");
         menu.fillEventFields(game);
         // TODO REMOVE END
+
+        try {
+            myConnector.saveEventToDb(game); // TODO remove this testing code
+        } catch (Exception e) {
+            // LOL
+        }
 
         myConnector.closeDb();
         menu.printExit();

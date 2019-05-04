@@ -65,7 +65,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      *   - Key is field's name as a String (such as the one returned from getAttributesName)
      *   - Value is the internal type of the field
      */
-    LinkedHashMap<String, Class<?>> getFields(){
+    public LinkedHashMap<String, Class<?>> getAttributes(){
         Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
         Field[] currentFields = this.getClass().getDeclaredFields(); // Both public and private fields
 
@@ -90,6 +90,53 @@ abstract class Event implements LegalObject, ReflectionInterface {
         return returnFields;
     }
 
+    /**
+     * A method to get DB-input ready values of all non-null fields of a class and its fathers
+     * @return a LinkedHashMap with a String as a key and a String as Value
+     *   - Key is field's name as a String (such as the one returned from getAttributesName)
+     *   - Value is a String ready to be inserted in a database query
+     */
+    public LinkedHashMap<String, String> getNonNullAttributesWithDBString() {
+        Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
+        Field[] currentFields = this.getClass().getDeclaredFields(); // Both public and private fields
+
+        LinkedHashMap<String, String> returnFields = new LinkedHashMap<>();
+
+        for (Field field:superFields) {
+            /*
+             * Following line return only the name of the field instead of full class name + field.
+             * It gets the last occurrence of the '.' char, add 1 to it (to exclude the dot itself)
+             * and then trims the string gotten from the reflection.
+             */
+            try {
+                if (field.get(this) != null) {
+                    String fieldName = field.toString().substring(field.toString().lastIndexOf('.') + 1);
+                    if (field.getType()  == Calendar.class) { // TODO we should move to java.time
+                        returnFields.put(fieldName, field.get(this).toString());
+                    }
+                    else {
+                        returnFields.put(fieldName, field.get(this).toString());
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                System.out.println("ALERT: Illegal access on field: " + field);
+                e.printStackTrace();
+            }
+        }
+        for (Field field:currentFields) {
+            try {
+                if (field.getModifiers() == Modifier.PUBLIC && field.get(this) != null) { // Filter out only public fields
+                    // Same goes for this line
+                    String fieldName = field.toString().substring( field.toString().lastIndexOf('.') + 1 );
+                    returnFields.put(fieldName, field.get(this).toString());
+                }
+            } catch (IllegalAccessException e) {
+                System.out.println("ALERT: Illegal access on field: " + field);
+                e.printStackTrace();
+            }
+        }
+        return returnFields;
+    }
 
     /**
      * A method to get the names of public fields of a class and its fathers

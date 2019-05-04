@@ -50,7 +50,7 @@ class Menu {
             Event game = factory.createEvent(eventType);
             System.out.println(game.getCatName() + '\n');
 
-            LinkedHashMap<String, Class<?>> eventFieldsMap = game.getFields();
+            LinkedHashMap<String, Class<?>> eventFieldsMap = game.getAttributes();
 
             Iterator iterator = eventFieldsMap.entrySet().iterator(); // Get an iterator for our map
 
@@ -85,19 +85,19 @@ class Menu {
         jsonTranslator eventJson = new jsonTranslator(Event.getJsonPath());
 
         for (String eventType: myConnector.getCategories()) {
-            Event game = factory.createEvent(eventType);
-            System.out.println(game.getCatName() + "\n  " + game.getCatDescription() + '\n');
+            Event event = factory.createEvent(eventType); // Throwaway empty event object
+            System.out.println(event.getCatName() + "\n  " + event.getCatDescription() + '\n');
 
             int maxLength = 0;
 
-            for (String field : game.getAttributesName()) { // Traverse all the names and...
+            for (String field : event.getAttributesName()) { // Traverse all the names and...
                 int length = eventJson.getName(field).length();
                 if (length > maxLength)
                     maxLength = length; // ...find the longest
             }
             maxLength += 3; // Add some more char to allow spacing between the longest name and its description
 
-            for (String field : game.getAttributesName()) {
+            for (String field : event.getAttributesName()) {
                 StringBuffer outputBuffer = new StringBuffer();
                 outputBuffer.append("  ");
                 outputBuffer.append(eventJson.getName(field));

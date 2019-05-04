@@ -1,8 +1,7 @@
 package impl;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 class Connector {
     Connection dbConnection = null;
@@ -83,11 +82,13 @@ class Connector {
      */
     ArrayList<String> getCategoryDescription(String categoryName) throws IllegalStateException, NoSuchElementException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+        String query = "SELECT * FROM categories WHERE event_type LIKE ?";
 
         ArrayList<String> returnAList = new ArrayList<>();
         try {
-            Statement categoriyDescrStatement = dbConnection.createStatement();
-            ResultSet rs = categoriyDescrStatement.executeQuery("select * from categories where event_type like '" + categoryName + "'");
+            PreparedStatement categoryDescrStatement = dbConnection.prepareStatement(query);
+            categoryDescrStatement.setString(1, categoryName);
+            ResultSet rs = categoryDescrStatement.executeQuery();
 
             if (!rs.next()) { // rs.next() returns false when the query has no results
                 throw new NoSuchElementException("ALERT: Category " + categoryName + " does not exist in the database");
@@ -102,5 +103,48 @@ class Connector {
             e.printStackTrace();
         }
         return returnAList;
+    }
+
+    /**
+     * Fetches a category's name and description from the database given its internal name (event_type in db)
+     * @return  an ArrayList of String.
+     *              - 1st element: Category's full name
+     *              - 2nd element: Category's description
+     *          If the category does not exist, empty ArrayList.
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws NoSuchElementException If given category does not exist in public.categories table
+     */
+    void saveEventToDb (Event event) throws SQLException, SQLTimeoutException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        StringBuilder query = new StringBuilder();
+        query.append("INSERT INTO ");
+        query.append(event.getCatName()).append(" (");
+        query.append("eventID, creatorID, category, catName, catDescription"); // Event private fields shouldn't be retrieved via getAttributesName // TODO this should have its own method
+
+        LinkedHashMap<String, String> setAttributes = event.getNonNullAttributesWithDBString();
+
+        Iterator iterator = setAttributes.entrySet().iterator(); // Get an iterator for our map
+
+        while(iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+
+            System.out.println(entry.getKey() + ": " + entry.getValue());
+        }
+
+/*        int usedAttributes = 0;
+        for (String field : setAttributes) {
+            System.out.println(field + ": " + event.isNull(field)); // TODO TESTING CODE
+            if (! event.isNull(field)) {
+                query.append(", ").append(field);
+                usedAttributes++;
+            }
+        }
+        query.append(") VALUES (?"); // Notice the question mark
+        for (int i = 0; i < usedAttributes - 1; i++) // Minus one since the first question mark is present in the above line
+            query.append(", ?");
+        query.append(")"); // We now have the query that should be passed to PreparedStatement
+*/
+        System.out.println(query);
     }
 }
