@@ -35,7 +35,7 @@ public class Main {
         try {
             myConnector.saveEventToDb(game); // TODO remove this testing code
         } catch (Exception e) {
-            // LOL
+            // TODO LOL
         }
 
         myConnector.closeDb();

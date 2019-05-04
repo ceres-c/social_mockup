@@ -106,21 +106,17 @@ class Connector {
     }
 
     /**
-     * Fetches a category's name and description from the database given its internal name (event_type in db)
-     * @return  an ArrayList of String.
-     *              - 1st element: Category's full name
-     *              - 2nd element: Category's description
-     *          If the category does not exist, empty ArrayList.
-     * @throws IllegalStateException If called before a database connection is established
-     * @throws NoSuchElementException If given category does not exist in public.categories table
+     * TODO method documentation
      */
     void saveEventToDb (Event event) throws SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
+        int parametersNumber = 0;
         StringBuilder query = new StringBuilder();
         query.append("INSERT INTO ");
         query.append(event.getCatName()).append(" (");
-        query.append("eventID, creatorID, category, catName, catDescription"); // Event private fields shouldn't be retrieved via getAttributesName // TODO this should have its own method
+        query.append("eventID, creatorID, category, catName, catDescription"); // Event private fields shouldn't be retrieved via getAttributesName // TODO this should probably have its own method in Event
+        parametersNumber += 5; // Number of Event private fields // TODO same here
 
         LinkedHashMap<String, String> setAttributes = event.getNonNullAttributesWithDBString();
 
@@ -128,23 +124,12 @@ class Connector {
 
         while(iterator.hasNext()) {
             Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
-
-            System.out.println(entry.getKey() + ": " + entry.getValue());
-        }
-
-/*        int usedAttributes = 0;
-        for (String field : setAttributes) {
-            System.out.println(field + ": " + event.isNull(field)); // TODO TESTING CODE
-            if (! event.isNull(field)) {
-                query.append(", ").append(field);
-                usedAttributes++;
-            }
+            query.append(", ").append(entry.getKey());
+            parametersNumber++;
         }
         query.append(") VALUES (?"); // Notice the question mark
-        for (int i = 0; i < usedAttributes - 1; i++) // Minus one since the first question mark is present in the above line
+        for (int i = 0; i < parametersNumber - 1; i++) // Minus one since the first question mark is present in the above line
             query.append(", ?");
-        query.append(")"); // We now have the query that should be passed to PreparedStatement
-*/
-        System.out.println(query);
+        query.append(")"); // We now have the query that can be passed to PreparedStatement
     }
 }

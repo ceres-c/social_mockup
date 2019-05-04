@@ -1,11 +1,10 @@
 package impl;
 
-import impl.fields.MyDuration;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
@@ -27,21 +26,21 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     private static final String EVENT_JSON_PATH = "res/IT_EventDescr.json";
 
-    private UUID        eventID; // UUID of the event stored in the DB
-    private UUID        creatorID; // UUID of the user who created the event
-    private String      category;
-    private String      catName;
-    private String      catDescription;
-    public  String      title;
-    public  Integer     partecipantsNum;
-    public  Calendar    deadline;
-    public  String      location;
-    public  Calendar    startDate;
-    public  MyDuration  duration; // Object used to store a time difference between two Calendars
-    public  Double      cost;
-    public  String      inQuota;
-    public  Calendar    endDate;
-    public  String      notes;
+    private UUID            eventID; // UUID of the event stored in the DB
+    private UUID            creatorID; // UUID of the user who created the event
+    private String          category;
+    private String          catName;
+    private String          catDescription;
+    public  String          title;
+    public  Integer         partecipantsNum;
+    public  LocalDateTime   deadline;
+    public  String          location;
+    public  LocalDateTime   startDate;
+    public  Duration        duration;
+    public  Double          cost;
+    public  String          inQuota;
+    public  LocalDateTime   endDate;
+    public  String          notes;
 
     private String[] mandatoryFields = {"partecipantsNum", "deadline", "location", "startDate", "cost"};
 
@@ -111,7 +110,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
             try {
                 if (field.get(this) != null) {
                     String fieldName = field.toString().substring(field.toString().lastIndexOf('.') + 1);
-                    if (field.getType()  == Calendar.class) { // TODO we should move to java.time
+                    if (field.getType()  == LocalDateTime.class) { // TODO this check could probably be avoided
                         returnFields.put(fieldName, field.get(this).toString());
                     }
                     else {
@@ -200,16 +199,19 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @throws IllegalStateException if user input isn't legal
      */
     public boolean isLegal() throws IllegalStateException {
-        Calendar currentDate = Calendar.getInstance();
+        LocalDateTime currentDate = LocalDateTime.now();
 
-        Calendar startPlusDuration = Calendar.getInstance(startDate.getTimeZone());
-        startPlusDuration.setTime(startDate.getTime()); // Thanks Java, mutables are the way to go.
-        if (duration != null) startPlusDuration.add(Calendar.MINUTE, duration.sizeOf()); // Now set the damn date
+        if (startDate.isBefore(deadline))
+            throw new IllegalStateException ("ALERT: start date prior than specified deadline");
+        if (currentDate.isAfter(deadline))
+            throw new IllegalStateException ("ALERT: deadline in the past");
+        if (endDate != null && endDate.isBefore(startDate) && !endDate.equals(startDate))
+            throw new IllegalStateException ("ALERT: end date prior start date");
+        if (duration != null) {
+            if (endDate != null && endDate.isBefore(startDate.plus(duration)))
+                throw new IllegalStateException("ALERT: end date comes before start date + duration");
+        }
 
-        if (startDate.before(deadline)) throw new IllegalStateException ("ALERT: start date prior than specified deadline");
-        if (currentDate.after(deadline)) throw new IllegalStateException ("ALERT: deadline in the past");
-        if (endDate != null && endDate.before(startDate) && !endDate.equals(startDate)) throw new IllegalStateException ("ALERT: end date prior start date");
-        if (endDate != null && endDate.before(startPlusDuration)) throw new IllegalStateException ("ALERT: end date comes before start date + duration");
         return true;
     }
 
@@ -218,19 +220,13 @@ abstract class Event implements LegalObject, ReflectionInterface {
         StringBuilder sb = new StringBuilder();
         sb.append("Title: ").append(title).append("\n");
         sb.append("Partecipants num: ").append(partecipantsNum).append("\n");
-        sb.append("Deadline: ").append(deadline.getTime()).append("\n");
+        sb.append("Deadline: ").append(deadline).append("\n");
         sb.append("Location: ").append(location).append("\n");
-        sb.append("Start date: ").append(startDate.getTime()).append("\n");
-        if (duration != null)
-            sb.append("Duration: ").append(duration.sizeOf()).append("\n");
-        else
-            sb.append("Duration: null\n");
+        sb.append("Start date: ").append(startDate).append("\n");
+        sb.append("Duration: ").append(duration).append("\n");
         sb.append("Cost: ").append(cost).append("\n");
         sb.append("In Quota: ").append(inQuota).append("\n");
-        if (endDate != null)
-            sb.append("End Date: ").append(endDate.getTime()).append("\n");
-        else
-            sb.append("End Date: null\n");
+        sb.append("End Date: ").append(endDate).append("\n");
         sb.append("Notes: ").append(notes).append("\n");
         return sb.toString();
     }

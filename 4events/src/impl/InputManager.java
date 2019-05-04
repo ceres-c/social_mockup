@@ -1,14 +1,14 @@
 package impl;
 
-import impl.fields.MyDuration;
 import impl.fields.Sex;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Scanner;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class InputManager {
@@ -32,12 +32,12 @@ public class InputManager {
             return (T) inputString(inputDescription);
         } else if (type.equals(Character.class)) {
             return (T) inputChar(inputDescription);
-        } else if (type.equals(Calendar.class)) {
-            return (T) inputCalendar(inputDescription);
+        } else if (type.equals(LocalDateTime.class)) {
+            return (T) inputDateTime(inputDescription);
+        } else if (type.equals(Duration.class)) {
+            return (T) inputDuration(inputDescription);
         } else if (type.equals(Sex.class)) {
             return (T) Sex.sexInput(inputDescription);
-        } else if (type.equals(MyDuration.class)) {
-            return (T) MyDuration.durationInput(inputDescription);
         } else {
             throw new IllegalArgumentException("ALERT: Unexpected input type: " + type);
         }
@@ -106,30 +106,64 @@ public class InputManager {
         return inputNumber;
     }
 
-    public static Calendar inputCalendar(String inputDescription){
-        boolean validInput;
-        Calendar cal = Calendar.getInstance();
+    public static LocalDateTime inputDateTime(String inputDescription){
+        boolean validInput = false; // Just to shut the compiler up.
+        LocalDateTime date = null;  // These two variables WILL be initialized once we hit return
         do {
-            System.out.print(inputDescription + " (DD/MM/YYYY) or (DD/MM/YYYY HH:MM:SS): ");
+            System.out.print(inputDescription + " (DD/MM/YYYY) or (DD/MM/YYYY HH:MM): ");
             String input = in.nextLine();
-            DateFormat dfDate = new SimpleDateFormat("dd/MM/yyyy");
-            DateFormat dfDateAndTime = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
             if (input.length() == 0)
                 return null;
             try {
-                validInput=true;
-                Date date = dfDate.parse(input);
-                cal.setTime(date);
-                try {
-                    Date dateAndTime = dfDateAndTime.parse(input);
-                    cal.setTime(dateAndTime);
-                }catch (ParseException e) {
+                validInput = true;
+                date = LocalDate.parse(input, dateFormat).atStartOfDay();
+            } catch (DateTimeParseException e) { // The user could have used hours and minutes too
+                try { // YAY! Nested try-catches
+                    date = LocalDateTime.parse(input, dateTimeFormat);
+                } catch (DateTimeParseException ex) { // Well, the user screwed up
+                    validInput = false;
+                    System.out.println("ALERT: wrong pattern");
                 }
-            } catch (ParseException e) {
-                validInput=false;
-                System.out.println("ALERT: wrong pattern");
             }
         } while (!validInput);
-        return cal; // If you want to print a calendar you need to convert it to a date object first
+        return date ;
+    }
+
+    static public Duration inputDuration (String inputDescription){
+        boolean validInput = false;
+        Duration duration = null;
+        StringBuilder durationBuilder = null;
+
+        do {
+            System.out.print(inputDescription + " (#D#H#M): ");
+            String input = in.nextLine();
+            if (input.length() == 0)
+                return null;
+            Pattern r = Pattern.compile("(\\d*D)?(\\d*H)?(\\d*M)?"); // Accepts all strings like 10D11H12M, but also only "10D", "11H" or "12M"
+            Matcher matcher = r.matcher(input);
+            if (matcher.matches()) { // We have to build a string that can be accepted by Duration.parse such as "P2DT3H4M"
+                validInput = true;
+                durationBuilder = new StringBuilder();
+                durationBuilder.append("P");
+                if (matcher.group(1) != null) durationBuilder.append(matcher.group(1));
+                if (matcher.group(2) != null || matcher.group(3) != null) durationBuilder.append("T");
+                // According to ISO standards Days and Hours/Minutes must be separated with a T, but it's not needed if we only have days
+                if (matcher.group(2) != null) durationBuilder.append(matcher.group(2));
+                if (matcher.group(3) != null) durationBuilder.append(matcher.group(3));
+            }
+            if (validInput) {
+                try {
+                    duration = Duration.parse(durationBuilder);
+                } catch (DateTimeParseException e) {
+                    // This should never happen (TM)
+                    validInput = false;
+                    System.out.println("ALERT: Illegal user input: " + input);
+                    e.printStackTrace();
+                }
+            }
+        } while (!validInput);
+        return duration ;
     }
 }
