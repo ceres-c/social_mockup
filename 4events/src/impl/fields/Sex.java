@@ -16,6 +16,8 @@ public class Sex {
         Character input;
         do {
             input = InputManager.inputChar(inputDescription + " (" + MALE + "|" + FEMALE + ")");
+            if (input == null)
+                return null;
         } while (! (input.equals(MALE) || input.equals(FEMALE)) );
         return new Sex(input);
     }

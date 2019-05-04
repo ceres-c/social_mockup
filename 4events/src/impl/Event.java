@@ -43,6 +43,8 @@ abstract class Event implements LegalObject, ReflectionInterface {
     public  Calendar    endDate;
     public  String      notes;
 
+    private String[] mandatoryFields = {"partecipantsNum", "deadline", "location", "startDate", "cost"};
+
     Event(String catName, String catDescription) {
         this.catName = catName;
         this.catDescription = catDescription;
@@ -60,7 +62,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
     /**
      * A method to get the fields of a class and its fathers
      * @return a LinkedHashMap with a String as a key and a Class<?> as Value
-     *   - Key is field's name as a String (such as the one returned from getFieldsName)
+     *   - Key is field's name as a String (such as the one returned from getAttributesName)
      *   - Value is the internal type of the field
      */
     LinkedHashMap<String, Class<?>> getFields(){
@@ -93,7 +95,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * A method to get the names of public fields of a class and its fathers
      * @return an ArrayList of Strings
      */
-    public ArrayList<String> getFieldsName(){
+    public ArrayList<String> getAttributesName(){
 
         Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
         Field[] currentFields = this.getClass().getDeclaredFields(); // Both public and private fields
@@ -136,6 +138,15 @@ abstract class Event implements LegalObject, ReflectionInterface {
     }
 
     /**
+     * A method to check if a field is mandatory or optional
+     */
+    public boolean isOptional(String fieldName) {
+        for (String field:mandatoryFields)
+            if (fieldName.equals(field)) return false;
+        return true;
+    }
+
+    /**
      * A method to check if the values input by an user are logically valid, used before saving to the DB
      * @return boolean:
      *      - True if legal
@@ -146,12 +157,12 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
         Calendar startPlusDuration = Calendar.getInstance(startDate.getTimeZone());
         startPlusDuration.setTime(startDate.getTime()); // Thanks Java, mutables are the way to go.
-        startPlusDuration.add(Calendar.MINUTE, duration.sizeOf()); // Now set the damn date
+        if (duration != null) startPlusDuration.add(Calendar.MINUTE, duration.sizeOf()); // Now set the damn date
 
         if (startDate.before(deadline)) throw new IllegalStateException ("ALERT: start date prior than specified deadline");
         if (currentDate.after(deadline)) throw new IllegalStateException ("ALERT: deadline in the past");
-        if (endDate.before(startDate) && !endDate.equals(startDate)) throw new IllegalStateException ("ALERT: end date prior start date");
-        if (endDate.before(startPlusDuration)) throw new IllegalStateException ("ALERT: end date comes before start date + duration");
+        if (endDate != null && endDate.before(startDate) && !endDate.equals(startDate)) throw new IllegalStateException ("ALERT: end date prior start date");
+        if (endDate != null && endDate.before(startPlusDuration)) throw new IllegalStateException ("ALERT: end date comes before start date + duration");
         return true;
     }
 
@@ -163,10 +174,16 @@ abstract class Event implements LegalObject, ReflectionInterface {
         sb.append("Deadline: ").append(deadline.getTime()).append("\n");
         sb.append("Location: ").append(location).append("\n");
         sb.append("Start date: ").append(startDate.getTime()).append("\n");
-        sb.append("Duration: ").append(duration.sizeOf()).append("\n");
+        if (duration != null)
+            sb.append("Duration: ").append(duration.sizeOf()).append("\n");
+        else
+            sb.append("Duration: null\n");
         sb.append("Cost: ").append(cost).append("\n");
         sb.append("In Quota: ").append(inQuota).append("\n");
-        sb.append("End Date: ").append(endDate.getTime()).append("\n");
+        if (endDate != null)
+            sb.append("End Date: ").append(endDate.getTime()).append("\n");
+        else
+            sb.append("End Date: null\n");
         sb.append("Notes: ").append(notes).append("\n");
         return sb.toString();
     }

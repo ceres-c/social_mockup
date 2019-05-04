@@ -40,7 +40,6 @@ class Menu {
 
     /**
      * Fills all the fields of a given impl.Event object
-     * //TODO Finish this insertion method
      * @throws IllegalStateException if user input is logically inconsistent (start date after end date and so on)
      */
     void fillEventFields(Event event) throws IllegalStateException {
@@ -57,13 +56,19 @@ class Menu {
 
             while(iterator.hasNext()) {
                 Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
-                String inputDescription = eventJson.getName( (String)entry.getKey() );
-                Object userInput = InputManager.genericInput(inputDescription, (Class)entry.getValue());
-                if (userInput == null)
-                    return; // TODO This should probably be changed to an Exception
-                else {
-                    event.setAttribute( (String)entry.getKey(), userInput);
-                }
+
+                boolean validUserInput = false;
+                do {
+                    String inputDescription = eventJson.getName((String) entry.getKey());
+                    Object userInput = InputManager.genericInput(inputDescription, (Class) entry.getValue());
+                    if (userInput == null) {
+                        validUserInput = game.isOptional((String) entry.getKey());
+                    } else {
+                        event.setAttribute((String) entry.getKey(), userInput);
+                        validUserInput = true;
+                    }
+                } while (!validUserInput);
+
             }
 
             event.isLegal();
@@ -85,14 +90,14 @@ class Menu {
 
             int maxLength = 0;
 
-            for (String field : game.getFieldsName()) { // Traverse all the names and...
+            for (String field : game.getAttributesName()) { // Traverse all the names and...
                 int length = eventJson.getName(field).length();
                 if (length > maxLength)
                     maxLength = length; // ...find the longest
             }
             maxLength += 3; // Add some more char to allow spacing between the longest name and its description
 
-            for (String field : game.getFieldsName()) {
+            for (String field : game.getAttributesName()) {
                 StringBuffer outputBuffer = new StringBuffer();
                 outputBuffer.append("  ");
                 outputBuffer.append(eventJson.getName(field));

@@ -11,6 +11,8 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     public Integer  ageMin;
     public Integer  ageMax;
 
+    private String[] mandatoryFields = {"gender", "ageMin", "ageMax"};
+
     SoccerGame(String catName, String catDescription){
         super(catName, catDescription);
     }
@@ -28,6 +30,16 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
             System.out.println("ALERT: Illegal access on field: " + fieldName);
             e.printStackTrace();
         }
+    }
+
+    /**
+     * A method to check if a field is mandatory or optional
+     */
+    public boolean isOptional(String fieldName) {
+        if (! super.isOptional(fieldName)) return false;
+        for (String field:mandatoryFields)
+            if (fieldName.equals(field)) return false;
+        return true;
     }
 
     /**

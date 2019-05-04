@@ -12,5 +12,5 @@ public interface ReflectionInterface {
      * A method to get the names of public fields of a class and its fathers
      * @return an ArrayList of Strings
      */
-    ArrayList<String> getFieldsName();
+    ArrayList<String> getAttributesName();
 }

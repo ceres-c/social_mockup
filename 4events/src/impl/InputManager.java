@@ -21,8 +21,9 @@ public class InputManager {
      * @param inputDescription A descriptive text to tell the user which input is required
      * @param type java.lang.Class type of needed input
      * @return A generic T which contains user input and HAS to be cast to the right type - WARNING: can be null!
+     * @throws IllegalArgumentException If this method is fed an unknown class type
      */
-    static <T> T genericInput(String inputDescription, Class type) {
+    static <T> T genericInput(String inputDescription, Class type) throws IllegalArgumentException {
         if (type.equals(Integer.class)) {
             return (T) inputInteger(inputDescription);
         } else if (type.equals(Double.class)) {
@@ -38,8 +39,7 @@ public class InputManager {
         } else if (type.equals(MyDuration.class)) {
             return (T) MyDuration.durationInput(inputDescription);
         } else {
-            System.out.println("WTF? " + type);
-            return (T) type; // TODO REMOVE THIS
+            throw new IllegalArgumentException("ALERT: Unexpected input type: " + type);
         }
     }
 
