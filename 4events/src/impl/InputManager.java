@@ -30,8 +30,6 @@ public class InputManager {
             return (T) inputDouble(inputDescription);
         } else if (type.equals(String.class)) {
             return (T) inputString(inputDescription);
-        } else if (type.equals(Character.class)) {
-            return (T) inputChar(inputDescription);
         } else if (type.equals(LocalDateTime.class)) {
             return (T) inputDateTime(inputDescription);
         } else if (type.equals(Duration.class)) {

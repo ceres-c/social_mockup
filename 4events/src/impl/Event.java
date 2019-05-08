@@ -28,11 +28,11 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     private UUID            eventID; // UUID of the event stored in the DB
     private UUID            creatorID; // UUID of the user who created the event
-    private String          category;
-    private String          catName;
+    private String          eventType; // As present in DB category list: ie. "soccer_game"
+    private String          catName; // Mnemonic name: ie. "Soccer Game"
     private String          catDescription;
     public  String          title;
-    public  Integer         partecipantsNum;
+    public  Integer         participantsNum;
     public  LocalDateTime   deadline;
     public  String          location;
     public  LocalDateTime   startDate;
@@ -42,13 +42,21 @@ abstract class Event implements LegalObject, ReflectionInterface {
     public  LocalDateTime   endDate;
     public  String          notes;
 
-    private String[] mandatoryFields = {"partecipantsNum", "deadline", "location", "startDate", "cost"};
+    private final String[] mandatoryFields = {"participantsNum", "deadline", "location", "startDate", "cost"};
 
-    Event(String catName, String catDescription) {
+    Event(UUID creatorID, String catDb, String catName, String catDescription) {
+        this.creatorID = creatorID;
+        this.eventType = catDb;
         this.catName = catName;
         this.catDescription = catDescription;
         eventID = UUID.randomUUID();
     }
+
+    public String getEventID() { return eventID.toString(); }
+
+    public String getCreatorID() { return creatorID.toString(); }
+
+    public String getEventType() { return eventType; }
 
     String getCatName() { return catName; }
 
@@ -66,7 +74,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      */
     public LinkedHashMap<String, Class<?>> getAttributes(){
         Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
-        Field[] currentFields = this.getClass().getDeclaredFields(); // Both public and private fields
+        Field[] thisFields = this.getClass().getDeclaredFields(); // Both public and private fields
 
         LinkedHashMap<String, Class<?>> returnFields = new LinkedHashMap<>();
 
@@ -79,7 +87,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
             String fieldName = field.toString().substring( field.toString().lastIndexOf('.') + 1 );
             returnFields.put(fieldName, field.getType());
         }
-        for (Field field:currentFields) {
+        for (Field field:thisFields) {
             if (field.getModifiers() == Modifier.PUBLIC) { // Filter out only public fields
                 // Same goes for this line
                 String fieldName = field.toString().substring( field.toString().lastIndexOf('.') + 1 );
@@ -91,15 +99,15 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     /**
      * A method to get DB-input ready values of all non-null fields of a class and its fathers
-     * @return a LinkedHashMap with a String as a key and a String as Value
+     * @return a LinkedHashMap with a String as a key and an Object as Value
      *   - Key is field's name as a String (such as the one returned from getAttributesName)
-     *   - Value is a String ready to be inserted in a database query
+     *   - Value is an Object with current value of a field
      */
-    public LinkedHashMap<String, String> getNonNullAttributesWithDBString() {
+    public LinkedHashMap<String, Object> getNonNullAttributesWithValue() {
         Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
-        Field[] currentFields = this.getClass().getDeclaredFields(); // Both public and private fields
+        Field[] thisFields = this.getClass().getDeclaredFields(); // Both public and private fields
 
-        LinkedHashMap<String, String> returnFields = new LinkedHashMap<>();
+        LinkedHashMap<String, Object> returnFields = new LinkedHashMap<>();
 
         for (Field field:superFields) {
             /*
@@ -110,24 +118,19 @@ abstract class Event implements LegalObject, ReflectionInterface {
             try {
                 if (field.get(this) != null) {
                     String fieldName = field.toString().substring(field.toString().lastIndexOf('.') + 1);
-                    if (field.getType()  == LocalDateTime.class) { // TODO this check could probably be avoided
-                        returnFields.put(fieldName, field.get(this).toString());
-                    }
-                    else {
-                        returnFields.put(fieldName, field.get(this).toString());
-                    }
+                    returnFields.put(fieldName, field.get(this));
                 }
             } catch (IllegalAccessException e) {
                 System.out.println("ALERT: Illegal access on field: " + field);
                 e.printStackTrace();
             }
         }
-        for (Field field:currentFields) {
+        for (Field field:thisFields) {
             try {
                 if (field.getModifiers() == Modifier.PUBLIC && field.get(this) != null) { // Filter out only public fields
                     // Same goes for this line
                     String fieldName = field.toString().substring( field.toString().lastIndexOf('.') + 1 );
-                    returnFields.put(fieldName, field.get(this).toString());
+                    returnFields.put(fieldName, field.get(this));
                 }
             } catch (IllegalAccessException e) {
                 System.out.println("ALERT: Illegal access on field: " + field);
@@ -144,7 +147,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
     public ArrayList<String> getAttributesName(){
 
         Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
-        Field[] currentFields = this.getClass().getDeclaredFields(); // Both public and private fields
+        Field[] thisFields = this.getClass().getDeclaredFields(); // Both public and private fields
 
         ArrayList <String> returnFields = new ArrayList<>();
 
@@ -157,7 +160,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
             String fieldName = field.toString().substring( field.toString().lastIndexOf('.') + 1 );
             returnFields.add(fieldName);
         }
-        for (Field field:currentFields) {
+        for (Field field:thisFields) {
             if (field.getModifiers() == Modifier.PUBLIC) { // Filter out only public fields
                 // Same goes for this line
                 String fieldName = field.toString().substring( field.toString().lastIndexOf('.') + 1 );
@@ -219,7 +222,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
     public String toString () {
         StringBuilder sb = new StringBuilder();
         sb.append("Title: ").append(title).append("\n");
-        sb.append("Partecipants num: ").append(partecipantsNum).append("\n");
+        sb.append("Participants num: ").append(participantsNum).append("\n");
         sb.append("Deadline: ").append(deadline).append("\n");
         sb.append("Location: ").append(location).append("\n");
         sb.append("Start date: ").append(startDate).append("\n");

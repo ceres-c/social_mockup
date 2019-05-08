@@ -3,7 +3,7 @@
     "name"  : "Titolo",
     "descr" : "Nome di fantasia attribuito all'evento"
   },
-  "partecipantsNum" : {
+  "participantsNum" : {
     "name"  : "Numero di partecipanti",
     "descr" : "Numero massimo di persone che possono partecipare all'evento"
   },

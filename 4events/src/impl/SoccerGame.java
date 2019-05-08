@@ -5,16 +5,20 @@ import interfaces.LegalObject;
 import interfaces.ReflectionInterface;
 
 import java.lang.reflect.Field;
+import java.util.UUID;
 
 public class SoccerGame extends Event implements LegalObject, ReflectionInterface {
     public Sex gender;
     public Integer  ageMin;
     public Integer  ageMax;
 
-    private String[] mandatoryFields = {"gender", "ageMin", "ageMax"};
+    private static final String catDB = "soccer_game";
+    private final String[] mandatoryFields = {"gender", "ageMin", "ageMax"};
 
-    SoccerGame(String catName, String catDescription){
-        super(catName, catDescription);
+    public static final String getCatDBName() { return catDB; }
+
+    SoccerGame(UUID creatorID, String catName, String catDescription){
+        super(creatorID, catDB, catName, catDescription);
     }
 
     /**

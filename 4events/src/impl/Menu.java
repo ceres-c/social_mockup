@@ -43,72 +43,63 @@ class Menu {
      * @throws IllegalStateException if user input is logically inconsistent (start date after end date and so on)
      */
     void fillEventFields(Event event) throws IllegalStateException {
-        EventFactory factory = new EventFactory(myConnector);
         jsonTranslator eventJson = new jsonTranslator(Event.getJsonPath());
 
-        for (String eventType: myConnector.getCategories()) {
-            Event game = factory.createEvent(eventType);
-            System.out.println(game.getCatName() + '\n');
+        System.out.println(event.getCatName() + '\n');
 
-            LinkedHashMap<String, Class<?>> eventFieldsMap = game.getAttributes();
+        LinkedHashMap<String, Class<?>> eventFieldsMap = event.getAttributes();
 
-            Iterator iterator = eventFieldsMap.entrySet().iterator(); // Get an iterator for our map
+        Iterator iterator = eventFieldsMap.entrySet().iterator(); // Get an iterator for our map
 
-            while(iterator.hasNext()) {
-                Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+        while(iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
 
-                boolean validUserInput = false;
-                do {
-                    String inputDescription = eventJson.getName((String) entry.getKey());
-                    Object userInput = InputManager.genericInput(inputDescription, (Class) entry.getValue());
-                    if (userInput == null) {
-                        validUserInput = game.isOptional((String) entry.getKey());
-                    } else {
-                        event.setAttribute((String) entry.getKey(), userInput);
-                        validUserInput = true;
-                    }
-                } while (!validUserInput);
+            boolean validUserInput = false;
+            do {
+                String inputDescription = eventJson.getName((String) entry.getKey());
+                Object userInput = InputManager.genericInput(inputDescription, (Class) entry.getValue());
+                if (userInput == null) {
+                    validUserInput = event.isOptional((String) entry.getKey());
+                } else {
+                    event.setAttribute((String) entry.getKey(), userInput);
+                    validUserInput = true;
+                }
+            } while (!validUserInput);
 
-            }
-
-            event.isLegal();
         }
+
+        event.isLegal();
     }
 
     /**
      * Prints name and description of available categories' fields
      */
-    void printFieldsName() {
+    void printFieldsName(Event event) {
         System.out.println(menuTranslation.getTranslation("categoryList"));
-
-        EventFactory factory = new EventFactory(myConnector);
         jsonTranslator eventJson = new jsonTranslator(Event.getJsonPath());
 
-        for (String eventType: myConnector.getCategories()) {
-            Event event = factory.createEvent(eventType); // Throwaway empty event object
-            System.out.println(event.getCatName() + "\n  " + event.getCatDescription() + '\n');
+        System.out.println(event.getCatName() + "\n  " + event.getCatDescription() + '\n');
 
-            int maxLength = 0;
+        int maxLength = 0;
 
-            for (String field : event.getAttributesName()) { // Traverse all the names and...
-                int length = eventJson.getName(field).length();
-                if (length > maxLength)
-                    maxLength = length; // ...find the longest
+        for (String field : event.getAttributesName()) { // Traverse all the names and...
+            int length = eventJson.getName(field).length();
+            if (length > maxLength)
+                maxLength = length; // ...find the longest
+        }
+        maxLength += 3; // Add some more char to allow spacing between the longest name and its description
+
+        for (String field : event.getAttributesName()) {
+            StringBuffer outputBuffer = new StringBuffer();
+            outputBuffer.append("  ");
+            outputBuffer.append(eventJson.getName(field));
+            outputBuffer.append(':');
+            for (int i = 0; i < (maxLength - eventJson.getName(field).length()); i++) { // Wonderful wizardry
+                outputBuffer.append(" "); // For spacing purposes
             }
-            maxLength += 3; // Add some more char to allow spacing between the longest name and its description
+            outputBuffer.append(eventJson.getDescr(field));
 
-            for (String field : event.getAttributesName()) {
-                StringBuffer outputBuffer = new StringBuffer();
-                outputBuffer.append("  ");
-                outputBuffer.append(eventJson.getName(field));
-                outputBuffer.append(':');
-                for (int i = 0; i < (maxLength - eventJson.getName(field).length()); i++) { // Wonderful wizardry
-                    outputBuffer.append(" "); // For spacing purposes
-                }
-                outputBuffer.append(eventJson.getDescr(field));
-
-                System.out.println(outputBuffer);
-            }
+            System.out.println(outputBuffer);
         }
     }
 

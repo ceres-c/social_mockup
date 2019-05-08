@@ -25,9 +25,9 @@ public interface ReflectionInterface {
 
     /**
      * A method to get DB-input ready values of all non-null fields of a class and its fathers
-     * @return a LinkedHashMap with a String as a key and a String as Value
+     * @return a LinkedHashMap with a String as a key and an Object as Value
      *   - Key is field's name as a String (such as the one returned from getAttributesName)
-     *   - Value is a String ready to be inserted in a database query
+     *   - Value is an Object with current value of a field
      */
-    LinkedHashMap<String, String> getNonNullAttributesWithDBString();
+    LinkedHashMap<String, Object> getNonNullAttributesWithValue();
 }

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.UUID;
 
 public class Main {
     private static final String CONFIG_JSON_PATH = "config.json";
@@ -28,14 +29,14 @@ public class Main {
 
         //menu.printFieldsName(); // TODO use this function for "help" section, printing available fields
         // TODO REMOVE following testing code
-        Event game = new SoccerGame("soccer_game", "Test description");
+        Event game = new SoccerGame(UUID.randomUUID(), "soccer_game", "Test description"); // TODO change to actual user's ID
         menu.fillEventFields(game);
         // TODO REMOVE END
 
         try {
-            myConnector.saveEventToDb(game); // TODO remove this testing code
+            myConnector.insertEvent(game); // TODO remove this testing code
         } catch (Exception e) {
-            // TODO LOL
+            e.printStackTrace(); // TODO remove this
         }
 
         myConnector.closeDb();

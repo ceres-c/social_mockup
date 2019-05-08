@@ -1,6 +1,10 @@
 package impl;
 
+import impl.fields.Sex;
+
 import java.sql.*;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 class Connector {
@@ -108,19 +112,20 @@ class Connector {
     /**
      * TODO method documentation
      */
-    void saveEventToDb (Event event) throws SQLException, SQLTimeoutException {
+    boolean insertEvent (Event event) throws IllegalStateException, SQLException, IllegalArgumentException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int parametersNumber = 0;
+        Iterator iterator;
         StringBuilder query = new StringBuilder();
-        query.append("INSERT INTO ");
+        query.append("INSERT INTO public.");
         query.append(event.getCatName()).append(" (");
-        query.append("eventID, creatorID, category, catName, catDescription"); // Event private fields shouldn't be retrieved via getAttributesName // TODO this should probably have its own method in Event
-        parametersNumber += 5; // Number of Event private fields // TODO same here
+        query.append("eventID, creatorID, eventType"); // Event private fields shouldn't be retrieved via getAttributesName // TODO this should probably have its own method in Event
+        parametersNumber += 3; // Number of Event private fields // TODO same here
 
-        LinkedHashMap<String, String> setAttributes = event.getNonNullAttributesWithDBString();
+        LinkedHashMap<String, Object> setAttributes = event.getNonNullAttributesWithValue();
 
-        Iterator iterator = setAttributes.entrySet().iterator(); // Get an iterator for our map
+        iterator = setAttributes.entrySet().iterator(); // Get an iterator for our map
 
         while(iterator.hasNext()) {
             Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
@@ -131,5 +136,43 @@ class Connector {
         for (int i = 0; i < parametersNumber - 1; i++) // Minus one since the first question mark is present in the above line
             query.append(", ?");
         query.append(")"); // We now have the query that can be passed to PreparedStatement
+
+
+        int parameterIndex = 1; // Because starting at 1 is fun, Java devs thought
+        PreparedStatement addEventStatement = dbConnection.prepareStatement(query.toString());
+        addEventStatement.setString(parameterIndex, event.getEventID());
+        parameterIndex++;
+        addEventStatement.setString(parameterIndex, event.getCreatorID());
+        parameterIndex++;
+        addEventStatement.setString(parameterIndex, event.getEventType());
+        parameterIndex++;
+
+        Class type; // This will hold the object type
+        iterator = setAttributes.entrySet().iterator(); // Reset to first element
+        while(iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+            type = entry.getValue().getClass();
+            if (type.equals(Integer.class)) {
+                addEventStatement.setInt(parameterIndex, (int) entry.getValue());
+            } else if (type.equals(Double.class)) {
+                addEventStatement.setDouble(parameterIndex, (double) entry.getValue());
+            } else if (type.equals(String.class)) {
+                addEventStatement.setString(parameterIndex, entry.getValue().toString());
+            } else if (type.equals(LocalDateTime.class)) {
+                addEventStatement.setObject(parameterIndex, (LocalDateTime) entry.getValue()); // Postgresql driver natively supports LocalDateTime
+            } else if (type.equals(Duration.class)) {
+                addEventStatement.setLong(parameterIndex, ((Duration) entry.getValue()).getSeconds());
+            } else if (type.equals(Sex.class)) {
+                addEventStatement.setString(parameterIndex, ((Sex) entry.getValue()).toString());
+            } else {
+                throw new IllegalArgumentException("ALERT: Unexpected input type: " + type);
+            }
+            parameterIndex++;
+        }
+
+        System.out.println(addEventStatement); // TODO remove this testing print
+
+        int i = addEventStatement.executeUpdate();
+        return i == 1 ? true : false;
     }
 }

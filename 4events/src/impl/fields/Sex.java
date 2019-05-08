@@ -2,6 +2,8 @@ package impl.fields;
 
 import impl.InputManager;
 
+import java.util.stream.Stream;
+
 public class Sex {
     private static final Character MALE = 'M';
     private static final Character FEMALE = 'F';
@@ -20,6 +22,10 @@ public class Sex {
                 return null;
         } while (! (input.equals(MALE) || input.equals(FEMALE)) );
         return new Sex(input);
+    }
+
+    public char getSex() {
+        return sex;
     }
 
     @Override

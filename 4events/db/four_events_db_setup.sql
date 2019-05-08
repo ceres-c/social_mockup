@@ -13,22 +13,22 @@
 --
 
 CREATE TABLE public.default_event (
-    event_id character(36) NOT NULL,
-    creator_id character(36) NOT NULL,
-    event_type text NOT NULL,
+    eventID character(36) NOT NULL,
+    creatorID character(36) NOT NULL,
+    eventType text NOT NULL,
     title text,
-    partecipants_num integer NOT NULL,
+    participantsNum integer NOT NULL,
     deadline date NOT NULL,
     location text NOT NULL,
-	start_date timestamp without time zone NOT NULL,
-	duration timestamp without time zone,
+    startDate timestamp without time zone NOT NULL,
+	duration numeric,
     cost numeric(12,2) NOT NULL,
-    in_quota text,
-	end_date timestamp without time zone,
+    inQuota text,
+    endDate timestamp without time zone,
     notes text,
     CONSTRAINT default_event_cost_check CHECK ((cost >= 0.0)),
-    CONSTRAINT default_event_partecipants_num_check CHECK ((partecipants_num > 0)),
-    CONSTRAINT default_event_pkey PRIMARY KEY (event_id)
+    CONSTRAINT default_event_participants_num_check CHECK ((participantsNum > 0)),
+    CONSTRAINT default_event_pkey PRIMARY KEY (eventID)
 );
 
 --
@@ -37,8 +37,8 @@ CREATE TABLE public.default_event (
 
 CREATE TABLE public.soccer_game (
     gender character(1) NOT NULL,
-    age_min smallint NOT NULL,
-    age_max smallint NOT NULL
+    ageMin smallint NOT NULL,
+    ageMax smallint NOT NULL
 )
 INHERITS (public.default_event);
 
