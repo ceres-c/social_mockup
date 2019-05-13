@@ -50,6 +50,22 @@ public class InputManager {
             return null; // CHECK FOR NULL-OBJECT!
     }
 
+    public static char[] inputPassword(String inputDescription) {
+        char[] password;
+        java.io.Console console = System.console();
+        if (console != null) { // Probably running in a standard terminal
+            password = console.readPassword(inputDescription + ": ");
+            if (password.length == 0)
+                password = null;
+        } else { // Probably running inside an IDE
+            String passwordString;
+            System.out.println("ALERT! Password will be displayed in plaintext since this program seems to be running in a non-compliant shell");
+            while ( (passwordString = InputManager.inputString("Password")) == null );
+            password = passwordString.toCharArray(); // This is defying the scope of using a char array, but given we'are already writing in plain text I guess it's not the worst thing here
+        }
+        return password;
+    }
+
     public static Double inputDouble(String inputDescription) {
         boolean validInput;
         boolean checkPattern;

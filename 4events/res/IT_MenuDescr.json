@@ -1,5 +1,8 @@
 {
   "welcome" : "Benvenuti in Social Mockup, il social network per creare e partecipare ad eventi",
   "exit" : "Arrivederci e a presto",
-  "categoryList" : "Ecco la lista delle categorie di eventi disponibili:"
+  "categoryList" : "Ecco la lista delle categorie di eventi disponibili",
+  "loginOrSignup" : "Utente già esistente o nuova registrazione? (1|2)",
+  "loginError" : "Nome utente o password errati",
+  "duplicateUser" : "Nome utente già presente nel database"
 }

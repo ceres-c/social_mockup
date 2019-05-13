@@ -8,6 +8,11 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 class Connector {
+    private final static String SELECT_USER = "SELECT * FROM public.users WHERE username LIKE ?";
+    private final static String INSERT_USER = "INSERT INTO public.users values (?, ?, ?)";
+    private final static String GET_CATEGORIES_QUERY = "select * from public.categories";
+    private final static String GET_CATEGORY_DESCRIPTION = "SELECT * FROM public.categories WHERE event_type LIKE ?";
+
     Connection dbConnection = null;
 
     /**
@@ -47,6 +52,66 @@ class Connector {
     }
 
     /**
+     * Validates given username and password on currently existing users and, if correct, returns a User object with
+     * data currently saved in the database
+     * @param username
+     * @param hashedPassword
+     * @return User object with data from the database
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws IllegalArgumentException If username or password are wrong
+     * @throws SQLException Directly from SQL driver if something else bad happens
+     */
+    User getUser(String username, String hashedPassword) throws IllegalStateException, IllegalArgumentException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+        String query = SELECT_USER;
+
+        User returnUser = new User();
+        PreparedStatement userExistStatement = dbConnection.prepareStatement(query);
+        userExistStatement.setString(1, username);
+        ResultSet rs = userExistStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results (username not present)
+            throw new IllegalArgumentException("Wrong username or password"); // To avoid leaking information about existing users
+        } else if (!hashedPassword.equals(rs.getString(2))) {
+            throw new IllegalArgumentException("Wrong username or password"); // To avoid leaking information about existing users
+        } else {
+            returnUser.setUsername(rs.getString(1));
+            returnUser.setHashedPassword(rs.getString(2));
+            returnUser.setUserID(UUID.fromString(rs.getString(3)));
+        }
+        return returnUser;
+    }
+
+    /**
+     * Insert a User object into the database
+     * @param user User object already populated
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws IllegalArgumentException If a User with the same username already exists in the database
+     * @throws SQLException Directly from SQL driver if something else bad happens
+     */
+    void insertUser (User user) throws IllegalStateException, IllegalArgumentException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+        String query = INSERT_USER;
+
+        int i = 0;
+        try {
+            PreparedStatement insertUserStatement = dbConnection.prepareStatement(query);
+            insertUserStatement.setString(1, user.getUsername());
+            insertUserStatement.setString(2, user.getHashedPassword());
+            insertUserStatement.setString(3, user.getUserID());
+            i = insertUserStatement.executeUpdate();
+        } catch(java.sql.SQLException e) {
+            if (e.getMessage().contains("duplicate key value")) {
+                throw new IllegalArgumentException("ALERT: Duplicate user " + user.getUsername());
+            }
+            System.out.println("ALERT: Failed to insert user in database");
+            e.printStackTrace();
+        }
+        if (i != 1)
+            throw new SQLException("ALERT: Error adding user to the database!\n" + "SQL INSERT query returned " + i);
+    }
+
+    /**
      * Fetches categories currently present in the database
      * @return  an ArrayList of String in the first column of public.categories table.
      *          If no categories, empty ArrayList.
@@ -59,7 +124,7 @@ class Connector {
         ArrayList<String> returnAList = new ArrayList<>();
         try {
             Statement categoriesStatement = dbConnection.createStatement();
-            ResultSet rs = categoriesStatement.executeQuery("select * from categories");
+            ResultSet rs = categoriesStatement.executeQuery(GET_CATEGORIES_QUERY);
 
             if (!rs.next()) { // rs.next() returns false when the query has no results
                 throw new NoSuchElementException("ALERT: No categories in the database");
@@ -86,7 +151,7 @@ class Connector {
      */
     ArrayList<String> getCategoryDescription(String categoryName) throws IllegalStateException, NoSuchElementException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
-        String query = "SELECT * FROM categories WHERE event_type LIKE ?";
+        String query = GET_CATEGORY_DESCRIPTION;
 
         ArrayList<String> returnAList = new ArrayList<>();
         try {
@@ -110,29 +175,37 @@ class Connector {
     }
 
     /**
-     * TODO method documentation
+     * Inserts an Event into the database in the proper table given an Event-like object
+     * @return  true if everything went smoothly
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs; this method is called on a closed PreparedStatement
+     *                      or the SQL statement returns a ResultSet object
+     * @throws SQLTimeoutException When the driver has determined that the timeout value that was specified
+     *                             by the setQueryTimeout method has been exceeded and has at least
+     *                             attempted to cancel the currently running Statement
      */
-    boolean insertEvent (Event event) throws IllegalStateException, SQLException, IllegalArgumentException {
+    boolean insertEvent (Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int parametersNumber = 0;
         Iterator iterator;
         StringBuilder query = new StringBuilder();
-        query.append("INSERT INTO public.");
-        query.append(event.getCatName()).append(" (");
-        query.append("eventID, creatorID, eventType"); // Event private fields shouldn't be retrieved via getAttributesName // TODO this should probably have its own method in Event
-        parametersNumber += 3; // Number of Event private fields // TODO same here
+        query.append("INSERT INTO public."); // Beginning of query
+        query.append(event.getCatName()).append(" ("); // category name. Eg: "INSERT INTO public.soccer_game ("
+        // Event private fields can't be retrieved via getNonNullAttributesWithValue, also, these names are common to all categories
+        query.append("eventID, creatorID, eventType");
+        parametersNumber += 3; // Number of Event private fields
 
-        LinkedHashMap<String, Object> setAttributes = event.getNonNullAttributesWithValue();
+        LinkedHashMap<String, Object> setAttributes = event.getNonNullAttributesWithValue(); // Map with all currently valid attributes
 
         iterator = setAttributes.entrySet().iterator(); // Get an iterator for our map
 
         while(iterator.hasNext()) {
             Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
-            query.append(", ").append(entry.getKey());
+            query.append(", ").append(entry.getKey()); // adds the field (column) name to the query. Eg: ", title"
             parametersNumber++;
         }
-        query.append(") VALUES (?"); // Notice the question mark
+        query.append(") VALUES (?"); // Terminates fields (columns) list and starts placeholders. Notice the first question mark!
         for (int i = 0; i < parametersNumber - 1; i++) // Minus one since the first question mark is present in the above line
             query.append(", ?");
         query.append(")"); // We now have the query that can be passed to PreparedStatement
@@ -140,11 +213,11 @@ class Connector {
 
         int parameterIndex = 1; // Because starting at 1 is fun, Java devs thought
         PreparedStatement addEventStatement = dbConnection.prepareStatement(query.toString());
-        addEventStatement.setString(parameterIndex, event.getEventID());
+        addEventStatement.setString(parameterIndex, event.getEventID()); // Event private fields here
         parameterIndex++;
-        addEventStatement.setString(parameterIndex, event.getCreatorID());
+        addEventStatement.setString(parameterIndex, event.getCreatorID()); // same
         parameterIndex++;
-        addEventStatement.setString(parameterIndex, event.getEventType());
+        addEventStatement.setString(parameterIndex, event.getEventType()); // same
         parameterIndex++;
 
         Class type; // This will hold the object type
@@ -170,9 +243,7 @@ class Connector {
             parameterIndex++;
         }
 
-        System.out.println(addEventStatement); // TODO remove this testing print
-
         int i = addEventStatement.executeUpdate();
-        return i == 1 ? true : false;
+        return i == 1; // executeUpdate returns 1 if the row has been added successfully
     }
 }

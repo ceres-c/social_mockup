@@ -57,3 +57,14 @@ CREATE TABLE public.categories (
 -- POPULATING TABLES WITH STUB VALUES FOR TESTING PURPOSES
 --
 INSERT INTO public.categories VALUES ('soccer_game', 'Partita di calcio', 'Sport più pagato al mondo che consiste nel rincorrere un pezzo di cuoio');
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.users (
+    username text NOT NULL,
+    hashedPassword character(128) NOT NULL,
+    userID character(36) NOT NULL,
+    CONSTRAINT users_pkey PRIMARY KEY (username)
+);

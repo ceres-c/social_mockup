@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.UUID;
 
 public class Main {
@@ -26,6 +27,28 @@ public class Main {
 
         Menu menu = new Menu(myConnector);
         menu.printWelcome();
+
+        User currentUser = new User();
+
+        if (menu.loginOrSignup()) { // Prints whether to login or sign up
+            // Login
+            try {
+                while ( (currentUser = menu.login()) == null );
+            } catch (SQLException e) {
+                System.err.println("Fatal error: couldn't fetch user's data from the database. Contact your sysadmin.");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        } else {
+            // Sign Up
+            try {
+                while ( (currentUser = menu.signup()) == null );
+            } catch (SQLException e) {
+                System.err.println("Fatal error: couldn't add new user to the database. Contact your sysadmin.");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
 
         //menu.printFieldsName(); // TODO use this function for "help" section, printing available fields
         // TODO REMOVE following testing code
@@ -45,6 +68,7 @@ public class Main {
 
     /**
      * Nested class that's used to store the JSONObject representation of the configuration on disk.
+     * Singleton
      */
     static class jsonConfigReader {
         JSONObject jsonContent;
