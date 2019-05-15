@@ -28,9 +28,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     private UUID            eventID; // UUID of the event stored in the DB
     private UUID            creatorID; // UUID of the user who created the event
-    private String          eventType; // As present in DB category list: ie. "soccer_game"
-    private String          catName; // Mnemonic name: ie. "Soccer Game"
-    private String          catDescription;
+    private String          eventTypeDB; // As present in DB category list: ie. "soccer_game"
     public  String          title;
     public  Integer         participantsNum;
     public  LocalDateTime   deadline;
@@ -44,23 +42,17 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     private final String[] mandatoryFields = {"participantsNum", "deadline", "location", "startDate", "cost"};
 
-    Event(UUID creatorID, String catDb, String catName, String catDescription) {
+    Event(UUID eventID, UUID creatorID, String catDb) {
+        this.eventID = eventID;
         this.creatorID = creatorID;
-        this.eventType = catDb;
-        this.catName = catName;
-        this.catDescription = catDescription;
-        eventID = UUID.randomUUID();
+        this.eventTypeDB = catDb;
     }
 
     public String getEventID() { return eventID.toString(); }
 
     public String getCreatorID() { return creatorID.toString(); }
 
-    public String getEventType() { return eventType; }
-
-    String getCatName() { return catName; }
-
-    String getCatDescription() { return catDescription; }
+    public String getEventTypeDB() { return eventTypeDB; }
 
     static String getJsonPath () {
         return EVENT_JSON_PATH;
@@ -72,7 +64,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      *   - Key is field's name as a String (such as the one returned from getAttributesName)
      *   - Value is the internal type of the field
      */
-    public LinkedHashMap<String, Class<?>> getAttributes(){
+    public LinkedHashMap<String, Class<?>> getAttributesWithType(){
         Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
         Field[] thisFields = this.getClass().getDeclaredFields(); // Both public and private fields
 

@@ -37,7 +37,9 @@ public class User {
         this.hashedPassword = hashedPassword;
     }
 
-    public String getUserID() {
+    public UUID getUserID() { return userID; }
+
+    public String getUserIDAsString() {
         return userID.toString();
     }
 

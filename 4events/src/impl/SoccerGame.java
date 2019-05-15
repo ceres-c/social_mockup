@@ -8,17 +8,17 @@ import java.lang.reflect.Field;
 import java.util.UUID;
 
 public class SoccerGame extends Event implements LegalObject, ReflectionInterface {
-    public Sex gender;
+    public Sex      gender;
     public Integer  ageMin;
     public Integer  ageMax;
 
-    private static final String catDB = "soccer_game";
+    private static final String eventTypeDB = "soccer_game";
     private final String[] mandatoryFields = {"gender", "ageMin", "ageMax"};
 
-    public static final String getCatDBName() { return catDB; }
+    public static final String getClassEventTypeDB() { return eventTypeDB; } // Static method to know how all the events of this type are saved in the DB
 
-    SoccerGame(UUID creatorID, String catName, String catDescription){
-        super(creatorID, catDB, catName, catDescription);
+    SoccerGame(UUID eventID, UUID creatorID){
+        super(eventID, creatorID, eventTypeDB);
     }
 
     /**
@@ -62,7 +62,7 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     public String toString () {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append("\n");
-        sb.append("Sex: ").append(gender.toString()).append("\n");
+        sb.append("Sex: ").append(gender == null ? "null" : gender.toString()).append("\n"); // If gender hasn't been set this avoids NullPointerExceptions
         sb.append("Age Min: ").append(ageMin).append("\n");
         sb.append("Age Max: ").append(ageMax).append("\n");
         return sb.toString();

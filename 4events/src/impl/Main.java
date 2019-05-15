@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 public class Main {
@@ -25,50 +27,67 @@ public class Main {
             System.exit(1); // Error is printed by the impl.Connector constructor
         }
 
-        Menu menu = new Menu(myConnector);
+        Menu menu = Menu.getInstance(myConnector);
         menu.printWelcome();
 
-        User currentUser = new User();
+        User currentUser = null;
 
-        if (menu.loginOrSignup()) { // Prints whether to login or sign up
-            // Login
-            try {
-                while ( (currentUser = menu.login()) == null );
-            } catch (SQLException e) {
-                System.err.println("Fatal error: couldn't fetch user's data from the database. Contact your sysadmin.");
-                e.printStackTrace();
-                System.exit(1);
-            }
-        } else {
-            // Sign Up
-            try {
-                while ( (currentUser = menu.signup()) == null );
-            } catch (SQLException e) {
-                System.err.println("Fatal error: couldn't add new user to the database. Contact your sysadmin.");
-                e.printStackTrace();
-                System.exit(1);
+        while (currentUser == null) { // Login or signup are always needed before being able to use the software
+            if (menu.loginOrSignup()) { // Prints whether to login or sign up
+                // Login
+                try {
+                    currentUser = menu.login();
+                } catch (SQLException e) {
+                    System.err.println("Fatal error: couldn't fetch user's data from the database. Contact your sysadmin.");
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+                if (currentUser != null) break;
+            } else {
+                // Sign Up
+                try {
+                    currentUser = menu.signup();
+                } catch (SQLException e) {
+                    System.err.println("FATAL: couldn't add new user to the database. Contact your sysadmin.");
+                    e.printStackTrace();
+                    System.exit(1);
+                }
             }
         }
-
-        //menu.printFieldsName(); // TODO use this function for "help" section, printing available fields
-        // TODO REMOVE following testing code
-        Event game = new SoccerGame(UUID.randomUUID(), "soccer_game", "Test description"); // TODO change to actual user's ID
-        menu.fillEventFields(game);
-        // TODO REMOVE END
 
         try {
-            myConnector.insertEvent(game); // TODO remove this testing code
-        } catch (Exception e) {
-            e.printStackTrace(); // TODO remove this
+            ArrayList<Event> events = myConnector.getEvents();
+            for (Event event: events) {
+                System.out.println(event);
+            }
+        } catch (SQLException e) {
+            System.err.println("FATAL: couldn't read events from the database. Contact your sysadmin.");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (NoSuchElementException ex) {
+            System.out.println("ALERT: No events currently in the database");
         }
 
-        myConnector.closeDb();
-        menu.printExit();
+        while (true) {
+            //menu.printFieldsName(); // TODO use this function for "help" section, printing available fields
+            // TODO REMOVE following testing code
+            Event game = new SoccerGame(/* EventID */UUID.randomUUID(), currentUser.getUserID()); // TODO change to actual user's ID
+            menu.fillEventFields(game);
+            // TODO REMOVE END
+
+            try {
+                myConnector.insertEvent(game); // TODO remove this testing code
+            } catch (Exception e) {
+                e.printStackTrace(); // TODO remove this
+            }
+        }
+
+        //myConnector.closeDb(); // TODO implement quit function in menu
+        //menu.printExit();
     }
 
     /**
      * Nested class that's used to store the JSONObject representation of the configuration on disk.
-     * Singleton
      */
     static class jsonConfigReader {
         JSONObject jsonContent;

@@ -21,7 +21,7 @@ public interface ReflectionInterface {
      *   - Key is field's name as a String (such as the one returned from getAttributesName)
      *   - Value is the internal type of the field
      */
-    LinkedHashMap<String, Class<?>> getAttributes();
+    LinkedHashMap<String, Class<?>> getAttributesWithType();
 
     /**
      * A method to get DB-input ready values of all non-null fields of a class and its fathers

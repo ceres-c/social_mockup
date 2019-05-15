@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.nio.file.Path;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,20 +19,34 @@ import java.util.Map;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Contains all the methods used to interact with the user
+ * Singleton
+ */
 class Menu {
+    private static Menu singleInstance = null;
+
     private static final String MENU_JSON_PATH = "res/IT_MenuDescr.json";
 
     private Connector myConnector;
     private jsonTranslator menuTranslation;
 
     /**
-     *
+     * Private constructor
      * @param dbConnector a impl. Connector to the local database
      */
-    Menu (Connector dbConnector) {
+    private Menu (Connector dbConnector) {
         this.myConnector = dbConnector;
         Path menuJsonPath = Paths.get(MENU_JSON_PATH);
         menuTranslation = new jsonTranslator(menuJsonPath.toString());
+    }
+
+    public static Menu getInstance(Connector dbConnector)
+    {
+        if (singleInstance == null)
+            singleInstance = new Menu(dbConnector);
+
+        return singleInstance;
     }
 
     void printWelcome() {
@@ -73,7 +88,7 @@ class Menu {
         try {
             userFromDb = myConnector.getUser(username, hashedPassword);
         } catch (IllegalArgumentException e) {
-            System.out.println(menuTranslation.getTranslation("loginError"));
+            System.err.println(menuTranslation.getTranslation("loginError"));
             return null; // CHECK FOR NULL-OBJECT!
         }
         return userFromDb;
@@ -97,7 +112,7 @@ class Menu {
         try {
             myConnector.insertUser(newUser);
         } catch (IllegalArgumentException e) {
-            System.out.println(menuTranslation.getTranslation("duplicateUser"));
+            System.err.println(menuTranslation.getTranslation("duplicateUser"));
             return null; // CHECK FOR NULL-OBJECT!
         }
         return newUser;
@@ -110,7 +125,7 @@ class Menu {
     void fillEventFields(Event event) throws IllegalStateException {
         jsonTranslator eventJson = new jsonTranslator(Event.getJsonPath());
 
-        LinkedHashMap<String, Class<?>> eventFieldsMap = event.getAttributes();
+        LinkedHashMap<String, Class<?>> eventFieldsMap = event.getAttributesWithType();
 
         Iterator iterator = eventFieldsMap.entrySet().iterator(); // Get an iterator for our map
 
@@ -128,7 +143,6 @@ class Menu {
                     validUserInput = true;
                 }
             } while (!validUserInput);
-
         }
 
         event.isLegal();
@@ -141,7 +155,8 @@ class Menu {
         System.out.println(menuTranslation.getTranslation("categoryList"));
         jsonTranslator eventJson = new jsonTranslator(Event.getJsonPath());
 
-        System.out.println(event.getCatName() + "\n  " + event.getCatDescription() + '\n');
+        ArrayList<String> catDescription = myConnector.getCategoryDescription(event.getEventID());
+        System.out.println(catDescription.get(0) + "\n  " + catDescription.get(1) + '\n'); // TODO the description could be moved to a json file
 
         int maxLength = 0;
 

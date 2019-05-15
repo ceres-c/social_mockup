@@ -18,6 +18,7 @@ public class InputManager {
     /**
      * Given a Class object, this method chooses the right kind of input needed
      * WARNING: return is null if the user did not write anything!
+     * @implNote If this method has to be changed, probably also Connector.genericDBGetter should be changed accordingly
      * @param inputDescription A descriptive text to tell the user which input is required
      * @param type java.lang.Class type of needed input
      * @return A generic T which contains user input and HAS to be cast to the right type - WARNING: can be null!

@@ -5,13 +5,17 @@ import impl.fields.Sex;
 import java.sql.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 class Connector {
     private final static String SELECT_USER = "SELECT * FROM public.users WHERE username LIKE ?";
     private final static String INSERT_USER = "INSERT INTO public.users values (?, ?, ?)";
-    private final static String GET_CATEGORIES_QUERY = "select * from public.categories";
+    private final static String GET_CATEGORIES_LIST = "select * from public.categories";
     private final static String GET_CATEGORY_DESCRIPTION = "SELECT * FROM public.categories WHERE event_type LIKE ?";
+    private final static String GET_EVENT_TYPE = "SELECT eventType FROM public.default_event WHERE eventID LIKE ?";
+    private final static String GET_EVENTS_LIST = "SELECT eventID FROM public.default_event";
+    private final static String GET_EVENT = "SELECT * FROM public.%s WHERE eventID LIKE ?"; // HACK explained in function body
 
     Connection dbConnection = null;
 
@@ -98,7 +102,7 @@ class Connector {
             PreparedStatement insertUserStatement = dbConnection.prepareStatement(query);
             insertUserStatement.setString(1, user.getUsername());
             insertUserStatement.setString(2, user.getHashedPassword());
-            insertUserStatement.setString(3, user.getUserID());
+            insertUserStatement.setString(3, user.getUserIDAsString());
             i = insertUserStatement.executeUpdate();
         } catch(java.sql.SQLException e) {
             if (e.getMessage().contains("duplicate key value")) {
@@ -121,23 +125,23 @@ class Connector {
     ArrayList<String> getCategories() throws IllegalStateException, NoSuchElementException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
-        ArrayList<String> returnAList = new ArrayList<>();
+        ArrayList<String> returnCategories = new ArrayList<>();
         try {
             Statement categoriesStatement = dbConnection.createStatement();
-            ResultSet rs = categoriesStatement.executeQuery(GET_CATEGORIES_QUERY);
+            ResultSet rs = categoriesStatement.executeQuery(GET_CATEGORIES_LIST);
 
             if (!rs.next()) { // rs.next() returns false when the query has no results
                 throw new NoSuchElementException("ALERT: No categories in the database");
             } else {
                 do {
-                    returnAList.add(rs.getString(1));
+                    returnCategories.add(rs.getString(1));
                 } while (rs.next());
             }
         } catch(java.sql.SQLException e) {
             System.out.println("ALERT: Failed getting categories from database!");
             e.printStackTrace();
         }
-        return returnAList;
+        return returnCategories;
     }
 
     /**
@@ -153,7 +157,7 @@ class Connector {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
         String query = GET_CATEGORY_DESCRIPTION;
 
-        ArrayList<String> returnAList = new ArrayList<>();
+        ArrayList<String> returnCatDescr = new ArrayList<>();
         try {
             PreparedStatement categoryDescrStatement = dbConnection.prepareStatement(query);
             categoryDescrStatement.setString(1, categoryName);
@@ -163,23 +167,22 @@ class Connector {
                 throw new NoSuchElementException("ALERT: Category " + categoryName + " does not exist in the database");
             } else {
                 do {
-                    returnAList.add(rs.getString(2));
-                    returnAList.add(rs.getString(3));
+                    returnCatDescr.add(rs.getString(2));
+                    returnCatDescr.add(rs.getString(3));
                 } while (rs.next());
             }
         } catch(java.sql.SQLException e) {
             System.out.println("ALERT: Failed getting category description!");
             e.printStackTrace();
         }
-        return returnAList;
+        return returnCatDescr;
     }
 
     /**
      * Inserts an Event into the database in the proper table given an Event-like object
      * @return  true if everything went smoothly
      * @throws IllegalStateException If called before a database connection is established
-     * @throws SQLException If a database access error occurs; this method is called on a closed PreparedStatement
-     *                      or the SQL statement returns a ResultSet object
+     * @throws SQLException If a database access error occurs
      * @throws SQLTimeoutException When the driver has determined that the timeout value that was specified
      *                             by the setQueryTimeout method has been exceeded and has at least
      *                             attempted to cancel the currently running Statement
@@ -191,7 +194,7 @@ class Connector {
         Iterator iterator;
         StringBuilder query = new StringBuilder();
         query.append("INSERT INTO public."); // Beginning of query
-        query.append(event.getCatName()).append(" ("); // category name. Eg: "INSERT INTO public.soccer_game ("
+        query.append(event.getEventTypeDB()).append(" ("); // category name. Eg: "INSERT INTO public.soccer_game ("
         // Event private fields can't be retrieved via getNonNullAttributesWithValue, also, these names are common to all categories
         query.append("eventID, creatorID, eventType");
         parametersNumber += 3; // Number of Event private fields
@@ -217,7 +220,7 @@ class Connector {
         parameterIndex++;
         addEventStatement.setString(parameterIndex, event.getCreatorID()); // same
         parameterIndex++;
-        addEventStatement.setString(parameterIndex, event.getEventType()); // same
+        addEventStatement.setString(parameterIndex, event.getEventTypeDB()); // same
         parameterIndex++;
 
         Class type; // This will hold the object type
@@ -245,5 +248,127 @@ class Connector {
 
         int i = addEventStatement.executeUpdate();
         return i == 1; // executeUpdate returns 1 if the row has been added successfully
+    }
+
+    /**
+     * Returns an Event object taken from the database given its UUID
+     * @param eventID
+     * @return Event - An object with all its fields filled as they are in the database
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws NoSuchElementException If the given UUID is not associated to any event in the database
+     * @throws SQLException If a database access error occurs
+     */
+    public Event getEvent(UUID eventID) throws IllegalStateException, NoSuchElementException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        Event event = null;
+        EventFactory eFactory = new EventFactory();
+
+        String eventType = this.getEventType(eventID);
+        PreparedStatement eventStatement = dbConnection.prepareStatement(String.format(GET_EVENT, eventType)); // HACK!
+        // This is a workaround to allow searching in the proper subtable (ie: soccer_game inherits from default_event)
+        // Java PreparedStatements do not allow passing tables name, so this was the only solution that could save from inner joins
+        eventStatement.setString(1, eventID.toString());
+        ResultSet rs = eventStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results
+            throw new NoSuchElementException("ALERT: No event with UUID " + eventID.toString() + " in database");
+        } else {
+            UUID creatorID = UUID.fromString(rs.getString("creatorID"));
+            event = eFactory.createEvent(eventID, creatorID, eventType);
+
+            LinkedHashMap<String, Class<?>> eventFieldsMap = event.getAttributesWithType();
+
+            Iterator iterator = eventFieldsMap.entrySet().iterator(); // Get an iterator for our map
+
+            while(iterator.hasNext()) {
+                Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+
+                Object attributeValue = Connector.genericDBGetter(rs, (String)entry.getKey(), (Class)entry.getValue() );
+                if (attributeValue != null) {
+                    event.setAttribute((String) entry.getKey(), attributeValue);
+                }
+            }
+        }
+
+        return event;
+    }
+
+    /**
+     * Dumps all available Events in the database to an ArrayList
+     * @return ArrayList of Event objects
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs
+     */
+    public ArrayList<Event> getEvents() throws IllegalStateException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        ArrayList <Event> returnEvents = new ArrayList<>();
+
+        Statement categoriesStatement = dbConnection.createStatement();
+        ResultSet rs = categoriesStatement.executeQuery(GET_EVENTS_LIST);
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results
+            throw new NoSuchElementException("ALERT: No events in the database");
+        } else {
+            do {
+                returnEvents.add(getEvent(UUID.fromString(rs.getString(1))));
+            } while (rs.next());
+        }
+
+        return returnEvents;
+    }
+
+    /**
+     * Returns an Event's type given its UUID
+     * @param eventID
+     * @return String - Event's category as present in DB category list: ie. "soccer_game"
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws NoSuchElementException If the given UUID is not associated to any event in the database
+     * @throws SQLException If a database access error occurs
+     */
+    private String getEventType (UUID eventID) throws IllegalStateException, NoSuchElementException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        String eventType;
+        PreparedStatement eventStatement = dbConnection.prepareStatement(GET_EVENT_TYPE);
+        eventStatement.setString(1, eventID.toString());
+        ResultSet rs = eventStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results
+            throw new NoSuchElementException("ALERT: No events in the database");
+        } else {
+            eventType = rs.getString(1);
+        }
+        return eventType;
+    }
+
+    /**
+     * Given a ResultSet object, column name and return type, this method chooses the right kind of database getter
+     * WARNING: return is null if the cell is NULL
+     * @param rs - A query ResultSet
+     * @param columnName - The name of the column to which the object should be extracted from
+     * @param type - The type of wanted object
+     * @return A generic T which contains user input and HAS to be cast to the right type - WARNING: can be null!
+     * @throws SQLException
+     */
+    private static <T> T genericDBGetter(ResultSet rs, String columnName, Class type) throws SQLException {
+        if (type.equals(Integer.class)) {
+            return (T) (Integer)rs.getInt(columnName);
+        } else if (type.equals(Double.class)) {
+            return (T) (Double)rs.getDouble(columnName);
+        } else if (type.equals(String.class)) {
+            return (T) rs.getString(columnName);
+        } else if (type.equals(LocalDateTime.class)) {
+            return (T) rs.getObject(columnName, LocalDateTime.class);
+        } else if (type.equals(Duration.class)) {
+            int seconds = rs.getInt(columnName);
+            if (seconds == 0) return null; // Just for a matter of consistency
+            return (T) Duration.of(seconds, ChronoUnit.SECONDS);
+        } else if (type.equals(Sex.class)) {
+            return (T) new Sex(rs.getString(columnName));
+        } else {
+            throw new IllegalArgumentException("ALERT: Unexpected input type: " + type);
+        }
     }
 }

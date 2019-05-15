@@ -10,8 +10,12 @@ public class Sex {
 
     private char sex;
 
-    Sex (Character sex) {
+    public Sex (Character sex) {
         this.sex = sex;
+    }
+
+    public Sex (String sex) {
+        this.sex = sex.charAt(0);
     }
 
     static public Sex sexInput (String inputDescription) {

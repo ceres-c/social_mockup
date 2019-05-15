@@ -18,7 +18,7 @@ CREATE TABLE public.default_event (
     eventType text NOT NULL,
     title text,
     participantsNum integer NOT NULL,
-    deadline date NOT NULL,
+    deadline timestamp without time zone NOT NULL,
     location text NOT NULL,
     startDate timestamp without time zone NOT NULL,
 	duration numeric,
