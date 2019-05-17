@@ -9,13 +9,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 class Connector {
-    private final static String SELECT_USER = "SELECT * FROM public.users WHERE username LIKE ?";
-    private final static String INSERT_USER = "INSERT INTO public.users values (?, ?, ?)";
+    private final static String SELECT_USER = "SELECT * FROM public.users WHERE username = ?";
+    private final static String INSERT_USER = "INSERT INTO public.users values (?, ?, ?, ?)";
     private final static String GET_CATEGORIES_LIST = "select * from public.categories";
-    private final static String GET_CATEGORY_DESCRIPTION = "SELECT * FROM public.categories WHERE event_type LIKE ?";
-    private final static String GET_EVENT_TYPE = "SELECT eventType FROM public.default_event WHERE eventID LIKE ?";
+    private final static String GET_CATEGORY_DESCRIPTION = "SELECT * FROM public.categories WHERE event_type = ?";
+    private final static String GET_EVENT_TYPE = "SELECT eventType FROM public.default_event WHERE eventID = ?";
     private final static String GET_EVENTS_LIST = "SELECT eventID FROM public.default_event";
     private final static String GET_EVENT = "SELECT * FROM public.%s WHERE eventID LIKE ?"; // HACK explained in function body
+    private final static String UPDATE_EVENT_PUBLISHED = "UPDATE public.%s SET published = ? WHERE eventID = ?"; // HACK explained in function body
+    private final static String UPDATE_EVENT_REGISTERED = "UPDATE public.%s SET registeredUsers = ? WHERE eventID = ?"; // HACK explained in function body
 
     Connection dbConnection = null;
 
@@ -79,9 +81,10 @@ class Connector {
         } else if (!hashedPassword.equals(rs.getString(2))) {
             throw new IllegalArgumentException("Wrong username or password"); // To avoid leaking information about existing users
         } else {
-            returnUser.setUsername(rs.getString(1));
-            returnUser.setHashedPassword(rs.getString(2));
-            returnUser.setUserID(UUID.fromString(rs.getString(3)));
+            returnUser.setUsername(rs.getString("username"));
+            returnUser.setHashedPassword(rs.getString("hashedPassword"));
+            returnUser.setUserID(UUID.fromString(rs.getString("userID")));
+            returnUser.setGender(new Sex(rs.getString("gender")));
         }
         return returnUser;
     }
@@ -95,14 +98,14 @@ class Connector {
      */
     void insertUser (User user) throws IllegalStateException, IllegalArgumentException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
-        String query = INSERT_USER;
 
         int i = 0;
         try {
-            PreparedStatement insertUserStatement = dbConnection.prepareStatement(query);
+            PreparedStatement insertUserStatement = dbConnection.prepareStatement(INSERT_USER);
             insertUserStatement.setString(1, user.getUsername());
             insertUserStatement.setString(2, user.getHashedPassword());
             insertUserStatement.setString(3, user.getUserIDAsString());
+            insertUserStatement.setString(4, user.getGender().toString());
             i = insertUserStatement.executeUpdate();
         } catch(java.sql.SQLException e) {
             if (e.getMessage().contains("duplicate key value")) {
@@ -112,7 +115,7 @@ class Connector {
             e.printStackTrace();
         }
         if (i != 1)
-            throw new SQLException("ALERT: Error adding user to the database!\n" + "SQL INSERT query returned " + i);
+            throw new SQLException("ALERT: Error adding user to the database!\nSQL INSERT query returned " + i);
     }
 
     /**
@@ -196,8 +199,8 @@ class Connector {
         query.append("INSERT INTO public."); // Beginning of query
         query.append(event.getEventTypeDB()).append(" ("); // category name. Eg: "INSERT INTO public.soccer_game ("
         // Event private fields can't be retrieved via getNonNullAttributesWithValue, also, these names are common to all categories
-        query.append("eventID, creatorID, eventType");
-        parametersNumber += 3; // Number of Event private fields
+        query.append("eventID, creatorID, eventType, published, registeredUsers, currentState");
+        parametersNumber += 6; // Number of Event private fields
 
         LinkedHashMap<String, Object> setAttributes = event.getNonNullAttributesWithValue(); // Map with all currently valid attributes
 
@@ -216,11 +219,18 @@ class Connector {
 
         int parameterIndex = 1; // Because starting at 1 is fun, Java devs thought
         PreparedStatement addEventStatement = dbConnection.prepareStatement(query.toString());
-        addEventStatement.setString(parameterIndex, event.getEventID()); // Event private fields here
+        addEventStatement.setString(parameterIndex, event.getEventIDAsString()); // Event private fields here - eventID
         parameterIndex++;
-        addEventStatement.setString(parameterIndex, event.getCreatorID()); // same
+        addEventStatement.setString(parameterIndex, event.getCreatorID()); // creatorID
         parameterIndex++;
-        addEventStatement.setString(parameterIndex, event.getEventTypeDB()); // same
+        addEventStatement.setString(parameterIndex, event.getEventTypeDB()); // eventType
+        parameterIndex++;
+        addEventStatement.setBoolean(parameterIndex, event.isPublished()); // published
+        parameterIndex++;
+        Array registeredUUIDDBArray = dbConnection.createArrayOf("VARCHAR", event.getRegisteredUsersAsString().toArray());
+        addEventStatement.setArray(parameterIndex, registeredUUIDDBArray);
+        parameterIndex++;
+        addEventStatement.setString(parameterIndex, event.getState()); // currentState
         parameterIndex++;
 
         Class type; // This will hold the object type
@@ -277,6 +287,16 @@ class Connector {
             UUID creatorID = UUID.fromString(rs.getString("creatorID"));
             event = eFactory.createEvent(eventID, creatorID, eventType);
 
+            event.setPublished(rs.getBoolean("published"));
+
+            Array registeredUsersDbArray = rs.getArray("registeredUsers"); // Get a Sql.Array object from the database
+            String[] registeredUsers = (String[])registeredUsersDbArray.getArray(); // Cast it to a Strings Array
+            for (String userID: registeredUsers) {
+                event.register(UUID.fromString(userID)); // Get UUID from String and add it to Event's array
+            }
+
+            event.setCurrentState(rs.getString("currentState"));
+
             LinkedHashMap<String, Class<?>> eventFieldsMap = event.getAttributesWithType();
 
             Iterator iterator = eventFieldsMap.entrySet().iterator(); // Get an iterator for our map
@@ -292,6 +312,51 @@ class Connector {
         }
 
         return event;
+    }
+
+    /**
+     * Updates an Event publishing status
+     * @param event
+     * @return True if everything went smoothly
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException
+     * @throws SQLTimeoutException
+     */
+    boolean updateEventPublished(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        int i = 0;
+        String eventType = this.getEventType(event.getEventID());
+        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(String.format(UPDATE_EVENT_PUBLISHED, eventType)); // HACK as explained in getEvent
+        updateEventPublishedStatement.setBoolean(1, event.isPublished()); // published
+        updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
+        i = updateEventPublishedStatement.executeUpdate();
+        if (i != 1)
+            throw new SQLException("ALERT: Error adding updating event!\nSQL INSERT query returned " + i);
+        return true;
+    }
+
+    /**
+     * Updates an Event registered users
+     * @param event
+     * @return True if everything went smoothly
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException
+     * @throws SQLTimeoutException
+     */
+    boolean updateEventRegistrations(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        int i = 0;
+        String eventType = this.getEventType(event.getEventID());
+        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(String.format(UPDATE_EVENT_REGISTERED, eventType)); // HACK as explained in getEvent
+        Array registeredUUIDDBArray = dbConnection.createArrayOf("VARCHAR", event.getRegisteredUsersAsString().toArray());
+        updateEventPublishedStatement.setArray(1, registeredUUIDDBArray); // registeredUsers
+        updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
+        i = updateEventPublishedStatement.executeUpdate();
+        if (i != 1)
+            throw new SQLException("ALERT: Error adding updating event!\nSQL INSERT query returned " + i);
+        return true;
     }
 
     /**
@@ -336,7 +401,7 @@ class Connector {
         ResultSet rs = eventStatement.executeQuery();
 
         if (!rs.next()) { // rs.next() returns false when the query has no results
-            throw new NoSuchElementException("ALERT: No events in the database");
+            throw new NoSuchElementException("ALERT: No event with UUID " + eventID.toString() + " in database");
         } else {
             eventType = rs.getString(1);
         }

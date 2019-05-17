@@ -2,8 +2,6 @@ package impl.fields;
 
 import impl.InputManager;
 
-import java.util.stream.Stream;
-
 public class Sex {
     private static final Character MALE = 'M';
     private static final Character FEMALE = 'F';
@@ -31,6 +29,8 @@ public class Sex {
     public char getSex() {
         return sex;
     }
+
+    public boolean equals(Sex other) { return this.sex == other.getSex(); }
 
     @Override
     public String toString () {

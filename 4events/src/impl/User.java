@@ -1,11 +1,14 @@
 package impl;
 
+import impl.fields.Sex;
+
 import java.util.UUID;
 
 public class User {
     private UUID userID;
     private String username;
     private String hashedPassword;
+    private Sex gender;
 
     /**
      * Creates an User object given username and hashedPassword
@@ -13,10 +16,11 @@ public class User {
      * @param username
      * @param hashedPassword
      */
-    public User(String username, String hashedPassword) {
-        this.userID = UUID.randomUUID();
+    public User(String username, String hashedPassword, Sex gender) {
         this.username = username;
         this.hashedPassword = hashedPassword;
+        this.userID = UUID.randomUUID();
+        this.gender = gender;
     }
 
     /**
@@ -37,6 +41,8 @@ public class User {
         this.hashedPassword = hashedPassword;
     }
 
+    public void setGender(Sex gender) { this.gender = gender; }
+
     public UUID getUserID() { return userID; }
 
     public String getUserIDAsString() {
@@ -51,4 +57,5 @@ public class User {
         return hashedPassword;
     }
 
+    public Sex getGender() { return gender; }
 }

@@ -16,6 +16,9 @@ CREATE TABLE public.default_event (
     eventID character(36) NOT NULL,
     creatorID character(36) NOT NULL,
     eventType text NOT NULL,
+    published boolean NOT NULL,
+    registeredUsers character(36)[], -- A event can have no registered users if created by a user which does not comply with event-specific constraints
+    currentState text NOT NULL,
     title text,
     participantsNum integer NOT NULL,
     deadline timestamp without time zone NOT NULL,
@@ -66,5 +69,6 @@ CREATE TABLE public.users (
     username text NOT NULL,
     hashedPassword character(128) NOT NULL,
     userID character(36) NOT NULL,
+    gender character(1) NOT NULL,
     CONSTRAINT users_pkey PRIMARY KEY (username)
 );

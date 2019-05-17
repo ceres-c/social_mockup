@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -31,6 +32,7 @@ public class Main {
         menu.printWelcome();
 
         User currentUser = null;
+        LocalDateTime currentDateTime = LocalDateTime.now();
 
         while (currentUser == null) { // Login or signup are always needed before being able to use the software
             if (menu.loginOrSignup()) { // Prints whether to login or sign up
@@ -71,15 +73,45 @@ public class Main {
         while (true) {
             //menu.printFieldsName(); // TODO use this function for "help" section, printing available fields
             // TODO REMOVE following testing code
-            Event game = new SoccerGame(/* EventID */UUID.randomUUID(), currentUser.getUserID()); // TODO change to actual user's ID
+            Event game = new SoccerGame(/* EventID */UUID.randomUUID(), currentUser.getUserID());
             menu.fillEventFields(game);
-            // TODO REMOVE END
 
-            try {
-                myConnector.insertEvent(game); // TODO remove this testing code
-            } catch (Exception e) {
-                e.printStackTrace(); // TODO remove this
+            if (game.isLegal()) {
+                game.updateStatus(currentDateTime); // UNKNOWN -> VALID
+
+                try {
+                    myConnector.insertEvent(game);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            } else {
+
             }
+
+            InputManager.inputString("Waiting for [ENTER] to publish the event");
+
+            if (game.publish()) { // Publish the event
+                game.updateStatus(currentDateTime); // VALID -> PUBLISHED
+                try {
+                    myConnector.updateEventPublished(game);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+
+            }
+
+            InputManager.inputString("Waiting for [ENTER] to register current user");
+
+            if (game.register(currentUser)) { // Add user to registeredUsers
+                try {
+                    myConnector.updateEventRegistrations(game);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                } // TODO catch IllegalArgumentException which happen when a user creates an event for different sex/age
+            }// TODO REMOVE END
         }
 
         //myConnector.closeDb(); // TODO implement quit function in menu

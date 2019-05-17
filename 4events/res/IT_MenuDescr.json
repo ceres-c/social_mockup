@@ -4,5 +4,6 @@
   "categoryList" : "Ecco la lista delle categorie di eventi disponibili",
   "loginOrSignup" : "Utente già esistente o nuova registrazione? (1|2)",
   "loginError" : "Nome utente o password errati",
-  "duplicateUser" : "Nome utente già presente nel database"
+  "duplicateUser" : "Nome utente già presente nel database",
+  "genderInput" : "Sesso"
 }

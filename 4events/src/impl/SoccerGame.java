@@ -37,6 +37,39 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     }
 
     /**
+     * A method to save an UserID into the Event object to keep track of registered users
+     * @param user A User object from whose the UserID will be taken
+     * @return True if everything went smoothly
+     * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
+     *                                  i.e User is already registered or User's Sex is not appropriate for this event
+     */
+    public boolean register(User user) throws IllegalArgumentException {
+        if (registeredUsers.contains(user.getUserID())) {
+            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + "is already registered to this event");
+        }
+        if (!user.getGender().equals(this.gender))
+            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " sex is not allowed to subscribe to this event");
+        registeredUsers.add(user.getUserID());
+        return true;
+    }
+
+    /**
+     * A method to save an UserID into the Event object that has to be used ONLY to restore an event from the database.
+     * For normal operation use register(User user)
+     * @param userID A UUID object
+     * @return True if everything went smoothly
+     * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
+     *                                  i.e User is already registered
+     */
+    public boolean register(UUID userID) throws IllegalArgumentException {
+        if (registeredUsers.contains(userID)) {
+            throw new IllegalArgumentException("ALERT: User " + userID.toString() + "is already registered to this event");
+        }
+        registeredUsers.add(userID);
+        return true;
+    }
+
+    /**
      * A method to check if a field is mandatory or optional
      */
     public boolean isOptional(String fieldName) {
@@ -47,7 +80,7 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     }
 
     /**
-     * A method to check if the values input by an user are logically valid, used before saving to the DB
+     * A method to check if the values input by an user are logically valid, used before saving to the database
      * @return boolean:
      *      - True if legal
      * @throws IllegalStateException if user input isn't legal
@@ -61,7 +94,7 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     @Override
     public String toString () {
         StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append("\n");
+        sb.append(super.toString());
         sb.append("Sex: ").append(gender == null ? "null" : gender.toString()).append("\n"); // If gender hasn't been set this avoids NullPointerExceptions
         sb.append("Age Min: ").append(ageMin).append("\n");
         sb.append("Age Max: ").append(ageMax).append("\n");

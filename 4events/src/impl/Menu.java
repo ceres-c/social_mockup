@@ -1,5 +1,6 @@
 package impl;
 
+import impl.fields.Sex;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -101,14 +102,16 @@ class Menu {
     User signup() throws SQLException {
         String username;
         char[] password;
+        Sex    gender;
         while ((username = InputManager.inputString("Username")) == null);
         while ((password = InputManager.inputPassword("Password")) == null);
+        gender = Sex.sexInput(menuTranslation.getTranslation("genderInput"));
 
         byte[] salt = charArrayToByteArray(username.toCharArray());
         String hashedPassword = SHA512PasswordHash(password, salt);
         java.util.Arrays.fill(password, ' '); // It will still be somewhere in memory due to Java's Almighty Garbage Collector (TM), but at least we tried.
 
-        User newUser = new User(username, hashedPassword);
+        User newUser = new User(username, hashedPassword, gender);
         try {
             myConnector.insertUser(newUser);
         } catch (IllegalArgumentException e) {
@@ -155,7 +158,7 @@ class Menu {
         System.out.println(menuTranslation.getTranslation("categoryList"));
         jsonTranslator eventJson = new jsonTranslator(Event.getJsonPath());
 
-        ArrayList<String> catDescription = myConnector.getCategoryDescription(event.getEventID());
+        ArrayList<String> catDescription = myConnector.getCategoryDescription(event.getEventIDAsString());
         System.out.println(catDescription.get(0) + "\n  " + catDescription.get(1) + '\n'); // TODO the description could be moved to a json file
 
         int maxLength = 0;
