@@ -24,26 +24,29 @@ public class InputManager {
      * @return A generic T which contains user input and HAS to be cast to the right type - WARNING: can be null!
      * @throws IllegalArgumentException If this method is fed an unknown class type
      */
-    static <T> T genericInput(String inputDescription, Class type) throws IllegalArgumentException {
+    static <T> T genericInput(String inputDescription, Class type, boolean inline) throws IllegalArgumentException {
         if (type.equals(Integer.class)) {
-            return (T) inputInteger(inputDescription);
+            return (T) inputInteger(inputDescription, inline);
         } else if (type.equals(Double.class)) {
-            return (T) inputDouble(inputDescription);
+            return (T) inputDouble(inputDescription, inline);
         } else if (type.equals(String.class)) {
-            return (T) inputString(inputDescription);
+            return (T) inputString(inputDescription, inline);
         } else if (type.equals(LocalDateTime.class)) {
-            return (T) inputDateTime(inputDescription);
+            return (T) inputDateTime(inputDescription, inline);
         } else if (type.equals(Duration.class)) {
-            return (T) inputDuration(inputDescription);
+            return (T) inputDuration(inputDescription, inline);
         } else if (type.equals(Sex.class)) {
-            return (T) Sex.sexInput(inputDescription);
+            return (T) Sex.sexInput(inputDescription, inline);
         } else {
             throw new IllegalArgumentException("ALERT: Unexpected input type: " + type);
         }
     }
 
-    public static String inputString(String inputDescription) {
-        System.out.print(inputDescription + ": ");
+    public static String inputString(String inputDescription, boolean inline) {
+        if (inline)
+            System.out.print(inputDescription + ": ");
+        else
+            System.out.print(inputDescription + "\n--> ");
         String input = in.nextLine().trim();
         if (input.length() > 0)
             return input;
@@ -61,19 +64,22 @@ public class InputManager {
         } else { // Probably running inside an IDE
             String passwordString;
             System.out.println("ALERT! Password will be displayed in plaintext since this program seems to be running in a non-compliant shell");
-            while ( (passwordString = InputManager.inputString("Password")) == null );
+            while ( (passwordString = InputManager.inputString("Password", true)) == null );
             password = passwordString.toCharArray(); // This is defying the scope of using a char array, but given we'are already writing in plain text I guess it's not the worst thing here
         }
         return password;
     }
 
-    public static Double inputDouble(String inputDescription) {
+    public static Double inputDouble(String inputDescription, boolean inline) {
         boolean validInput;
         boolean checkPattern;
         double inputNumber = 0.00; // Just to shut the compiler up, this variable WILL be initialized once we return
         Pattern pattern = Pattern.compile("^\\d{1,3}(,\\d{3})*(\\.\\d{1,2})?$");
         do {
-            System.out.print(inputDescription + " (#.##): ");
+            if (inline)
+                System.out.print(inputDescription + " (#.##): ");
+            else
+                System.out.print(inputDescription + " (#.##):\n--> ");
             String input = in.nextLine().trim();
             checkPattern = pattern.matcher(input).matches();
             input = input.replaceAll(",", "");
@@ -93,8 +99,11 @@ public class InputManager {
         return inputNumber;
     }
 
-    public static Character inputChar(String inputDescription) {
-        System.out.print(inputDescription + ": ");
+    public static Character inputChar(String inputDescription, boolean inline) {
+        if (inline)
+            System.out.print(inputDescription + ": ");
+        else
+            System.out.print(inputDescription + "\n--> ");
         String input = in.nextLine().trim();
         if (input.length() > 0)
             return input.charAt(0);
@@ -102,11 +111,14 @@ public class InputManager {
             return null; // CHECK FOR NULL-OBJECT!
     }
 
-    public static Integer inputInteger(String inputDescription) {
+    public static Integer inputInteger(String inputDescription, boolean inline) {
         boolean validInput;
         Integer inputNumber = 0; // Just to shut the compiler up, this variable WILL be initialized once we return
         do {
-            System.out.print(inputDescription + ": ");
+            if (inline)
+                System.out.print(inputDescription + ": ");
+            else
+                System.out.print(inputDescription + "\n--> ");
             String input = in.nextLine().trim();
             if (input.length() == 0)
                 return null; // CHECK FOR NULL-OBJECT!
@@ -121,11 +133,14 @@ public class InputManager {
         return inputNumber;
     }
 
-    public static LocalDateTime inputDateTime(String inputDescription){
+    public static LocalDateTime inputDateTime(String inputDescription, boolean inline){
         boolean validInput = false; // Just to shut the compiler up.
         LocalDateTime date = null;  // These two variables WILL be initialized once we hit return
         do {
-            System.out.print(inputDescription + " (DD/MM/YYYY) or (DD/MM/YYYY HH:MM): ");
+            if (inline)
+                System.out.print(inputDescription + " (DD/MM/YYYY) or (DD/MM/YYYY HH:MM): ");
+            else
+                System.out.print(inputDescription + " (DD/MM/YYYY) or (DD/MM/YYYY HH:MM):\n--> ");
             String input = in.nextLine();
             DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
             DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -146,13 +161,16 @@ public class InputManager {
         return date ;
     }
 
-    static public Duration inputDuration (String inputDescription){
+    static public Duration inputDuration (String inputDescription, boolean inline){
         boolean validInput = false;
         Duration duration = null;
         StringBuilder durationBuilder = null;
 
         do {
-            System.out.print(inputDescription + " (#D#H#M): ");
+            if (inline)
+                System.out.print(inputDescription + " (#D#H#M): ");
+            else
+                System.out.print(inputDescription + " (#D#H#M):\n--> ");
             String input = in.nextLine();
             if (input.length() == 0)
                 return null;

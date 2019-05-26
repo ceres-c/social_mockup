@@ -2,6 +2,7 @@ package impl;
 
 import impl.fields.Sex;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class User {
@@ -58,4 +59,15 @@ public class User {
     }
 
     public Sex getGender() { return gender; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return getUserID().equals(user.getUserID()) &&
+                getUsername().equals(user.getUsername()) &&
+                getHashedPassword().equals(user.getHashedPassword()) &&
+                getGender().equals(user.getGender());
+    }
 }

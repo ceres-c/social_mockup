@@ -16,10 +16,10 @@ public class Sex {
         this.sex = sex.charAt(0);
     }
 
-    static public Sex sexInput (String inputDescription) {
+    static public Sex sexInput (String inputDescription, boolean inline) {
         Character input;
         do {
-            input = InputManager.inputChar(inputDescription + " (" + MALE + "|" + FEMALE + ")");
+            input = InputManager.inputChar(inputDescription + " (" + MALE + "|" + FEMALE + ")", inline);
             if (input == null)
                 return null;
         } while (! (input.equals(MALE) || input.equals(FEMALE)) );

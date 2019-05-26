@@ -11,111 +11,183 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.NoSuchElementException;
-import java.util.UUID;
 
 public class Main {
+    public enum Command {
+        INVALID,
+        DASHBOARD,
+        PUBLIC_EVENTS_LIST,
+        NEW_EVENT,
+        HELP,
+        LOGOUT,
+        QUIT
+    }
+
     private static final String CONFIG_JSON_PATH = "config.json";
 
     public static void main(String args[]) {
         Connector myConnector = null; // Declared null to shut the compiler up, on usage it will always be properly instanced
-        Path configPath = Paths.get(CONFIG_JSON_PATH);
-        jsonConfigReader config = new jsonConfigReader(configPath.toString());
+
+        Path configJsonPath = Paths.get(CONFIG_JSON_PATH);
+        jsonConfigReader config = new jsonConfigReader(configJsonPath.toString());
+
+        Path menuJsonPath = Paths.get(Menu.MENU_JSON_PATH);
+        jsonTranslator menuTranslation = new jsonTranslator(menuJsonPath.toString());
+
         try {
             myConnector = new Connector(config.getDBURL(), config.getDBUser(), config.getDBPassword());
         } catch (IllegalStateException e) {
             System.exit(1); // Error is printed by the impl.Connector constructor
         }
 
-        Menu menu = Menu.getInstance(myConnector);
+        // TODO update events status and throw notifications
+
+        Menu menu = Menu.getInstance(myConnector, menuTranslation);
         menu.printWelcome();
 
-        User currentUser = null;
         LocalDateTime currentDateTime = LocalDateTime.now();
+        User currentUser;
+        while ((currentUser = menu.loginOrSignup()) == null);
 
-        while (currentUser == null) { // Login or signup are always needed before being able to use the software
-            if (menu.loginOrSignup()) { // Prints whether to login or sign up
-                // Login
-                try {
-                    currentUser = menu.login();
-                } catch (SQLException e) {
-                    System.err.println("Fatal error: couldn't fetch user's data from the database. Contact your sysadmin.");
-                    e.printStackTrace();
-                    System.exit(1);
-                }
-                if (currentUser != null) break;
-            } else {
-                // Sign Up
-                try {
-                    currentUser = menu.signup();
-                } catch (SQLException e) {
-                    System.err.println("FATAL: couldn't add new user to the database. Contact your sysadmin.");
-                    e.printStackTrace();
-                    System.exit(1);
-                }
-            }
-        }
-
-        try {
-            ArrayList<Event> events = myConnector.getEvents();
-            for (Event event: events) {
-                System.out.println(event);
-            }
-        } catch (SQLException e) {
-            System.err.println("FATAL: couldn't read events from the database. Contact your sysadmin.");
-            e.printStackTrace();
-            System.exit(1);
-        } catch (NoSuchElementException ex) {
-            System.out.println("ALERT: No events currently in the database");
-        }
+        Command userSelection = Command.INVALID;
 
         while (true) {
-            //menu.printFieldsName(); // TODO use this function for "help" section, printing available fields
-            // TODO REMOVE following testing code
-            Event game = new SoccerGame(/* EventID */UUID.randomUUID(), currentUser.getUserID());
-            menu.fillEventFields(game);
+            userSelection = menu.displayMainMenu(currentUser);
+            switch (userSelection) {
+                case INVALID:
+                    break;
+                case DASHBOARD:
+                    int dashboardUserSelection = menu.displayDashboard();
+                    switch (dashboardUserSelection) {
+                        case 1:
+                            // Show Personal Notifications
+                            menu.displayNotifications(currentUser);
+                            break;
+                        case 2:
+                            // Show Events created by currentUSer
+                            menu.displayEventsByCreator(currentUser);
+                            break;
+                        case 3:
+                            // Show Events currentUSer has registered to
+                            menu.displayEventsByRegistration(currentUser);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case PUBLIC_EVENTS_LIST: {
+                    Event existingEvent;
+                    existingEvent = menu.chooseEventFromPublicList();
 
-            if (game.isLegal()) {
-                game.updateStatus(currentDateTime); // UNKNOWN -> VALID
+                    if (existingEvent != null) {
+                        // Means the user has selected an event from the list
+                        Path eventJsonPath = Paths.get(Event.getJsonPath());
+                        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
 
-                try {
-                    myConnector.insertEvent(game);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    System.exit(1);
+                        System.out.println(existingEvent.detailedDescription(eventTranslation, myConnector));
+
+                        if (menu.registerEvent()) {
+                            // The user wants to register
+                            boolean canRegister = false;
+                            try {
+                                canRegister = existingEvent.register(currentUser);
+                            } catch (IllegalArgumentException ex) {
+                                if (ex.getMessage().contains("is already registered")) {
+                                    System.err.println(menuTranslation.getTranslation("userAlreadyRegisteredToEvent"));
+                                } else if (ex.getMessage().contains("sex is not allowed")) {
+                                    System.err.println(menuTranslation.getTranslation("eventRegistrationSexMismatch"));
+                                }
+                            }
+
+                            if (canRegister) {
+                                try {
+                                    myConnector.updateEventRegistrations(existingEvent);
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                    System.exit(1);
+                                }
+                            }
+                        }
+                    }
+
+                    break;
                 }
-            } else {
+                case NEW_EVENT: {
+                    Event newEvent = null;
+                    boolean registerUser = false;
 
-            }
+                    try {
+                        newEvent = menu.createEvent(currentUser);
+                    } catch (IllegalStateException e) {
+                        System.err.println(menuTranslation.getTranslation("eventNotLegal"));
+                        System.err.println(e.getMessage());
+                        break;
+                    }
 
-            InputManager.inputString("Waiting for [ENTER] to publish the event");
+                    if (newEvent == null) // User aborted event creation
+                        break;
 
-            if (game.publish()) { // Publish the event
-                game.updateStatus(currentDateTime); // VALID -> PUBLISHED
-                try {
-                    myConnector.updateEventPublished(game);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    System.exit(1);
+                    newEvent.updateStatus(currentDateTime); // UNKNOWN -> VALID
+                    try {
+                        myConnector.insertEvent(newEvent);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        System.exit(1);
+                    }
+
+                    try {
+                        registerUser = newEvent.register(currentUser);
+                    } catch (IllegalArgumentException ex) {
+                        if (ex.getMessage().contains("is already registered")) {
+                            System.err.println(menuTranslation.getTranslation("userAlreadyRegisteredToEvent"));
+                        } else if (ex.getMessage().contains("sex is not allowed")) {
+                            System.err.println(menuTranslation.getTranslation("eventCreationSexMismatch"));
+                        }
+                    }
+
+                    if (registerUser) {
+                        try {
+                            myConnector.updateEventRegistrations(newEvent);
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                            System.exit(1);
+                        }
+                    }
+
+                    if (menu.publishEvent()) {
+                        // The user wants to publish the event
+                        try {
+                            newEvent.publish();
+                            newEvent.updateStatus(currentDateTime); // VALID -> OPEN
+                            try {
+                                myConnector.updateEventState(newEvent);
+                                myConnector.updateEventPublished(newEvent);
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                                System.exit(1);
+                            }
+                        } catch (IllegalStateException e) {
+                            System.err.println(e.getMessage());
+                            break;
+                        }
+                    }
+
+                    break;
                 }
-
+                case HELP:
+                    menu.displayHelp();
+                    break;
+                case LOGOUT:
+                    while ((currentUser = menu.loginOrSignup()) == null); // Simply refreshes currentUser object
+                    break;
+                case QUIT:
+                    myConnector.closeDb();
+                    menu.printExit();
+                    System.exit(0);
+                default:
+                    break;
             }
-
-            InputManager.inputString("Waiting for [ENTER] to register current user");
-
-            if (game.register(currentUser)) { // Add user to registeredUsers
-                try {
-                    myConnector.updateEventRegistrations(game);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    System.exit(1);
-                } // TODO catch IllegalArgumentException which happen when a user creates an event for different sex/age
-            }// TODO REMOVE END
         }
-
-        //myConnector.closeDb(); // TODO implement quit function in menu
-        //menu.printExit();
     }
 
     /**
@@ -149,6 +221,69 @@ public class Main {
 
         String getDBUser () throws JSONException {
             return jsonContent.getString("db_username");
+        }
+    }
+
+    /**
+     * Nested class that's used to store the JSONObject representation of a translation on disk.
+     */
+    static class jsonTranslator {
+        JSONObject jsonContent;
+
+        /**
+         * Instantiate a jsonTranslator object with the given json file
+         * @param jsonPath Path to the json file to load
+         */
+        jsonTranslator (String jsonPath) {
+            InputStream inputStream = getClass().getResourceAsStream(jsonPath); // Tries to open the json as a resource
+            if (inputStream == null) // If getResourceAsStream returns null, we're not running in a jar
+                try {
+                    inputStream = new FileInputStream(jsonPath); // Then we need to read the file from disk
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+
+            JSONTokener tokener = new JSONTokener(inputStream);
+            jsonContent = new JSONObject(tokener);
+        }
+
+        /**
+         * Translates a field to human readable text
+         * @param key The key to search for in json file
+         * @return <String> The string corresponding to key
+         */
+        String getTranslation (String key) {
+            try {
+                return jsonContent.getString(key);
+            } catch (JSONException e) {
+                return ("ALERT: Missing element in json file: " + key);
+            }
+        }
+
+        /**
+         * Translates a field to human readable text
+         * @param key The key to search for in json file
+         * @return <String> The name corresponding to key
+         */
+        String getName (String key) {
+            try {
+                return jsonContent.getJSONObject(key).getString("name");
+            } catch (JSONException e) {
+                return ("ALERT: Missing element in json file: " + key);
+            }
+        }
+
+        /**
+         * Translates a field to a human readable description
+         * @param key The key to search for in json file
+         * @return <String> The description corresponding to key
+         */
+        String getDescr (String key) {
+            try {
+                return jsonContent.getJSONObject(key).getString("descr");
+            } catch (JSONException e) {
+                return ("ALERT: Missing element in json file: " + key);
+            }
         }
     }
 }

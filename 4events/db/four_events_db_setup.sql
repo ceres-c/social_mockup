@@ -1,6 +1,8 @@
 --
 -- PostgreSQL database setup script
 --
+END; -- Otherwise it's impossible to create a database in a sql script with autocommit enabled
+CREATE DATABASE four_events_db;
 
 --
 -- Name: four_events_db; Type: DATABASE; Schema: -; Owner: postgres
@@ -12,6 +14,7 @@
 -- Name: default_event; Type: TABLE; Schema: public; Owner: postgres
 --
 
+BEGIN;
 CREATE TABLE public.default_event (
     eventID character(36) NOT NULL,
     creatorID character(36) NOT NULL,
@@ -51,24 +54,37 @@ INHERITS (public.default_event);
 
 CREATE TABLE public.categories (
 	event_type text,
-	name text,
-	descr text,
 	CONSTRAINT categories_pkey PRIMARY KEY (event_type)
 );
-
---
--- POPULATING TABLES WITH STUB VALUES FOR TESTING PURPOSES
---
-INSERT INTO public.categories VALUES ('soccer_game', 'Partita di calcio', 'Sport più pagato al mondo che consiste nel rincorrere un pezzo di cuoio');
 
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.users (
-    username text NOT NULL,
+	username text NOT NULL,
     hashedPassword character(128) NOT NULL,
     userID character(36) NOT NULL,
     gender character(1) NOT NULL,
     CONSTRAINT users_pkey PRIMARY KEY (username)
 );
+
+--
+-- Name: eventNotifications; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.eventNotifications (
+    notificationID character(36) NOT NULL,
+    eventID character(36) NOT NULL,
+    recipientID character(36) NOT NULL,
+    read boolean NOT NULL,
+    title varchar,
+    content varchar,
+    CONSTRAINT eventNotifications_pkey PRIMARY KEY (notificationID)
+);
+
+--
+-- Populating table with the only available category
+--
+INSERT INTO public.categories VALUES ('soccer_game');
+END;

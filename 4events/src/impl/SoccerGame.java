@@ -17,6 +17,15 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
 
     public static final String getClassEventTypeDB() { return eventTypeDB; } // Static method to know how all the events of this type are saved in the DB
 
+    /**
+     * This empty constructor has to be used ONLY for dummy objects.
+     * If used for Event Objects that will be manipulated, it WILL lead to NullPointerExceptions
+     *
+     * Here be dragons
+     */
+    public SoccerGame() {
+    }
+
     SoccerGame(UUID eventID, UUID creatorID){
         super(eventID, creatorID, eventTypeDB);
     }

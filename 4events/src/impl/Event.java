@@ -2,11 +2,10 @@ package impl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.sql.SQLException;
 import java.time.Duration;
-import java.util.ArrayList;
+import java.util.*;
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.UUID;
 
 import interfaces.LegalObject;
 import interfaces.ReflectionInterface;
@@ -45,6 +44,15 @@ abstract class Event implements LegalObject, ReflectionInterface {
     public  String          notes;
 
     private final String[] mandatoryFields = {"participantsNum", "deadline", "location", "startDate", "cost"};
+
+    /**
+     * This empty constructor has to be used ONLY for dummy objects.
+     * If used for Event Objects that will be manipulated, it WILL lead to NullPointerExceptions
+     *
+     * Here be dragons
+     */
+    public Event() {
+    }
 
     Event(UUID eventID, UUID creatorID, String catDb) {
         this.eventID = eventID;
@@ -89,11 +97,10 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @return true if this Event can be and has been published
      * @throws IllegalStateException If called on an event which is non-legal
      */
-    boolean publish() throws IllegalStateException {
-        if (!isLegal())
+    void publish() throws IllegalStateException {
+        if (!this.published && !isLegal())
             throw new IllegalStateException("ALERT: Non legal events can't be published");
-        published = true;
-        return true;
+        this.published = true;
     }
 
     /**
@@ -138,22 +145,21 @@ abstract class Event implements LegalObject, ReflectionInterface {
             case UNKNOWN:
                 if (this.isLegal()) {
                     currentState = State.VALID;
-                    return true;
                 }
-                break;
+                return true;
 
             case VALID:
-                if (this.published) {
+                if (this.published && (currentDateTime.isBefore(deadline) || currentDateTime.equals(deadline))) {
                     currentState = State.OPEN;
                     return true;
+                } else {
+                    return false;
                 }
-                break;
 
             case OPEN:
                 if (currentDateTime.isBefore(deadline) || currentDateTime.equals(deadline)) {
                     if (registeredUsers.size() >= participantsNum) {
                         this.currentState = State.CLOSED;
-                        return true;
                     }
                 } else {
                     if (registeredUsers.size() < participantsNum) {
@@ -161,21 +167,18 @@ abstract class Event implements LegalObject, ReflectionInterface {
                     } else if (registeredUsers.size() >= participantsNum) {
                         this.currentState = State.CLOSED;
                     }
-                    return true;
                 }
-                break;
+                return true;
 
             case CLOSED:
                 if (currentDateTime.isAfter(endDate)) {
                     this.currentState = State.ENDED;
-                    return true;
                 }
-                break;
+                return true;
 
             default:
                 return false; // We're in ENDED or FAILED statuses and those can't be altered
         }
-        return false;
     }
 
     /**
@@ -257,7 +260,6 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @return an ArrayList of Strings
      */
     public ArrayList<String> getAttributesName(){
-
         Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
         Field[] thisFields = this.getClass().getDeclaredFields(); // Both public and private fields
 
@@ -329,6 +331,41 @@ abstract class Event implements LegalObject, ReflectionInterface {
         }
 
         return true;
+    }
+
+    String synopsis (Main.jsonTranslator eventTranslation, Connector myConnector) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(eventTranslation.getName(this.getEventTypeDB())).append('\n');
+        sb.append(eventTranslation.getName("title")).append(": ").append(this.title).append('\n');
+        try {
+            sb.append(eventTranslation.getName("creator")).append(": ").append(myConnector.getUsername(this.creatorID)).append('\n');
+        } catch (SQLException | IllegalArgumentException e) {
+            sb.append(eventTranslation.getName("creator")).append(": Error fetching username\n");
+        }
+        sb.append(eventTranslation.getName("deadline")).append(": ").append(this.deadline).append('\t');
+        sb.append(eventTranslation.getName("startDate")).append(": ").append(this.startDate).append('\n');
+        return sb.toString();
+    }
+
+    String detailedDescription (Main.jsonTranslator eventTranslation, Connector myConnector) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(eventTranslation.getName(this.getEventTypeDB())).append('\n');
+        try {
+            sb.append(eventTranslation.getName("creator")).append(": ").append(myConnector.getUsername(this.creatorID)).append('\n');
+        } catch (SQLException | IllegalArgumentException e) {
+            sb.append(eventTranslation.getName("creator")).append(": Error fetching username\n");
+        }
+        sb.append(eventTranslation.getName("state")).append(": ").append(eventTranslation.getTranslation(this.currentState.name())).append('\n');
+
+        Iterator iterator;
+        LinkedHashMap<String, Object> setAttributes = this.getNonNullAttributesWithValue(); // Map with all currently valid attributes
+        iterator = setAttributes.entrySet().iterator(); // Get an iterator for our map
+
+        while(iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+            sb.append(eventTranslation.getName((String)entry.getKey())).append(": ").append(entry.getValue()).append("\n");
+        }
+        return sb.toString();
     }
 
     @Override

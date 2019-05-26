@@ -1,4 +1,16 @@
 {
+  "state" : {
+    "name"  : "Stato",
+    "descr" : "Stato in cui si trova attualmente la proposta"
+  },
+  "creator" : {
+    "name"  : "Creatore dell'evento",
+    "descr" : "Utente che ha creato l'evento e lo può amministrare"
+  },
+  "soccer_game" : {
+    "name"  : "Partita di calcio",
+    "descr" : "Sport più pagato al mondo che consiste nel rincorrere un pezzo di cuoio"
+  },
   "title" : {
     "name"  : "Titolo",
     "descr" : "Nome di fantasia attribuito all'evento"
@@ -50,5 +62,11 @@
   "ageMax" : {
     "name"  : "Età massima",
     "descr" : "Soglia massima d'età per partecipare"
-  }
+  },
+  "UNKNOWN" : "Sconosciuto",
+  "VALID"   : "Valido",
+  "OPEN"    : "Aperto",
+  "CLOSED"  : "Chiuso",
+  "FAILED"  : "Fallito",
+  "ENDED"   : "Concluso"
 }

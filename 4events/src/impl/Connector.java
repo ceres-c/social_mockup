@@ -9,15 +9,22 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 class Connector {
-    private final static String SELECT_USER = "SELECT * FROM public.users WHERE username = ?";
+    private final static String GET_USER = "SELECT * FROM public.users WHERE username = ?";
     private final static String INSERT_USER = "INSERT INTO public.users values (?, ?, ?, ?)";
+    private final static String GET_USERNAME = "SELECT username FROM public.users WHERE userID = ?";
     private final static String GET_CATEGORIES_LIST = "select * from public.categories";
-    private final static String GET_CATEGORY_DESCRIPTION = "SELECT * FROM public.categories WHERE event_type = ?";
     private final static String GET_EVENT_TYPE = "SELECT eventType FROM public.default_event WHERE eventID = ?";
-    private final static String GET_EVENTS_LIST = "SELECT eventID FROM public.default_event";
+    private final static String GET_OPEN_EVENTS_LIST = "SELECT eventID FROM public.default_event WHERE published = true AND currentstate = 'OPEN'";
+    private final static String GET_EVENTS_LIST_BY_CREATORID = "SELECT eventID FROM public.default_event WHERE creatorID = ?";
+    private final static String GET_EVENTS_LIST_BY_REGISTERED = "SELECT eventID FROM public.default_event WHERE ? = ANY (public.default_event.registeredUsers)";
     private final static String GET_EVENT = "SELECT * FROM public.%s WHERE eventID LIKE ?"; // HACK explained in function body
-    private final static String UPDATE_EVENT_PUBLISHED = "UPDATE public.%s SET published = ? WHERE eventID = ?"; // HACK explained in function body
-    private final static String UPDATE_EVENT_REGISTERED = "UPDATE public.%s SET registeredUsers = ? WHERE eventID = ?"; // HACK explained in function body
+    private final static String UPDATE_EVENT_STATE = "UPDATE public.default_event SET currentstate = ? WHERE eventID = ?";
+    private final static String UPDATE_EVENT_PUBLISHED = "UPDATE public.default_event SET published = ? WHERE eventID = ?";
+    private final static String UPDATE_EVENT_REGISTERED = "UPDATE public.default_event SET registeredUsers = ? WHERE eventID = ?";
+    private final static String GET_NOTIFICATIONS_BY_USER = "SELECT notificationID FROM public.eventNotifications WHERE recipientID = ?";
+    private final static String GET_UNREAD_NOTIFICATIONS_BY_USER = "SELECT * FROM public.eventNotifications WHERE recipientID = ? AND read = false";
+    private final static String GET_NOTIFICATION = "SELECT * FROM public.eventNotifications WHERE notificationID = ?";
+    private final static String UPDATE_NOTIFICATION_READ = "UPDATE public.eventNotifications SET read = ? WHERE notificationID = ?";
 
     Connection dbConnection = null;
 
@@ -69,7 +76,7 @@ class Connector {
      */
     User getUser(String username, String hashedPassword) throws IllegalStateException, IllegalArgumentException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
-        String query = SELECT_USER;
+        String query = GET_USER;
 
         User returnUser = new User();
         PreparedStatement userExistStatement = dbConnection.prepareStatement(query);
@@ -95,8 +102,9 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws IllegalArgumentException If a User with the same username already exists in the database
      * @throws SQLException Directly from SQL driver if something else bad happens
+     * @return True if insertion went right
      */
-    void insertUser (User user) throws IllegalStateException, IllegalArgumentException, SQLException {
+    boolean insertUser (User user) throws IllegalStateException, IllegalArgumentException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
@@ -114,8 +122,34 @@ class Connector {
             System.out.println("ALERT: Failed to insert user in database");
             e.printStackTrace();
         }
-        if (i != 1)
+        if (i == 1)
+            return true;
+        else
             throw new SQLException("ALERT: Error adding user to the database!\nSQL INSERT query returned " + i);
+    }
+
+    /**
+     * Returns only username of a user given its userID.
+     * @param userID UUID object to look for in the database
+     * @return String with the username
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws IllegalArgumentException If username or password are wrong
+     * @throws SQLException Directly from SQL driver if something else bad happens
+     */
+    String getUsername(UUID userID) throws IllegalStateException, IllegalArgumentException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        String username;
+        PreparedStatement userExistStatement = dbConnection.prepareStatement(GET_USERNAME);
+        userExistStatement.setString(1, userID.toString());
+        ResultSet rs = userExistStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results (userID not present)
+            throw new IllegalArgumentException("ALERT: Specified user does not exist");
+        } else {
+            username = rs.getString("username");
+        }
+        return username;
     }
 
     /**
@@ -148,40 +182,6 @@ class Connector {
     }
 
     /**
-     * Fetches a category's name and description from the database given its internal name (event_type in db)
-     * @return  an ArrayList of String.
-     *              - 1st element: Category's full name
-     *              - 2nd element: Category's description
-     *          If the category does not exist, empty ArrayList.
-     * @throws IllegalStateException If called before a database connection is established
-     * @throws NoSuchElementException If given category does not exist in public.categories table
-     */
-    ArrayList<String> getCategoryDescription(String categoryName) throws IllegalStateException, NoSuchElementException {
-        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
-        String query = GET_CATEGORY_DESCRIPTION;
-
-        ArrayList<String> returnCatDescr = new ArrayList<>();
-        try {
-            PreparedStatement categoryDescrStatement = dbConnection.prepareStatement(query);
-            categoryDescrStatement.setString(1, categoryName);
-            ResultSet rs = categoryDescrStatement.executeQuery();
-
-            if (!rs.next()) { // rs.next() returns false when the query has no results
-                throw new NoSuchElementException("ALERT: Category " + categoryName + " does not exist in the database");
-            } else {
-                do {
-                    returnCatDescr.add(rs.getString(2));
-                    returnCatDescr.add(rs.getString(3));
-                } while (rs.next());
-            }
-        } catch(java.sql.SQLException e) {
-            System.out.println("ALERT: Failed getting category description!");
-            e.printStackTrace();
-        }
-        return returnCatDescr;
-    }
-
-    /**
      * Inserts an Event into the database in the proper table given an Event-like object
      * @return  true if everything went smoothly
      * @throws IllegalStateException If called before a database connection is established
@@ -194,7 +194,6 @@ class Connector {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int parametersNumber = 0;
-        Iterator iterator;
         StringBuilder query = new StringBuilder();
         query.append("INSERT INTO public."); // Beginning of query
         query.append(event.getEventTypeDB()).append(" ("); // category name. Eg: "INSERT INTO public.soccer_game ("
@@ -202,8 +201,8 @@ class Connector {
         query.append("eventID, creatorID, eventType, published, registeredUsers, currentState");
         parametersNumber += 6; // Number of Event private fields
 
+        Iterator iterator;
         LinkedHashMap<String, Object> setAttributes = event.getNonNullAttributesWithValue(); // Map with all currently valid attributes
-
         iterator = setAttributes.entrySet().iterator(); // Get an iterator for our map
 
         while(iterator.hasNext()) {
@@ -315,19 +314,43 @@ class Connector {
     }
 
     /**
-     * Updates an Event publishing status
-     * @param event
+     * Updates an Event state
+     * @param event The Event to update in database
      * @return True if everything went smoothly
      * @throws IllegalStateException If called before a database connection is established
-     * @throws SQLException
-     * @throws SQLTimeoutException
+     * @throws SQLException If a database access error occurs
+     * @throws SQLTimeoutException When the driver has determined that the timeout value that was specified
+     *                             by the setQueryTimeout method has been exceeded and has at least
+     *                             attempted to cancel the currently running Statement
+     */
+    boolean updateEventState(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        int i = 0;
+        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(UPDATE_EVENT_STATE);
+        updateEventPublishedStatement.setString(1, event.getState()); // published
+        updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
+        i = updateEventPublishedStatement.executeUpdate();
+        if (i != 1)
+            throw new SQLException("ALERT: Error adding updating event!\nSQL INSERT query returned " + i);
+        return true;
+    }
+
+    /**
+     * Updates an Event publishing status
+     * @param event The Event to update in database
+     * @return True if everything went smoothly
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs
+     * @throws SQLTimeoutException When the driver has determined that the timeout value that was specified
+     *                             by the setQueryTimeout method has been exceeded and has at least
+     *                             attempted to cancel the currently running Statement
      */
     boolean updateEventPublished(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
-        String eventType = this.getEventType(event.getEventID());
-        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(String.format(UPDATE_EVENT_PUBLISHED, eventType)); // HACK as explained in getEvent
+        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(UPDATE_EVENT_PUBLISHED);
         updateEventPublishedStatement.setBoolean(1, event.isPublished()); // published
         updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
         i = updateEventPublishedStatement.executeUpdate();
@@ -338,18 +361,19 @@ class Connector {
 
     /**
      * Updates an Event registered users
-     * @param event
+     * @param event The Event to update in database
      * @return True if everything went smoothly
      * @throws IllegalStateException If called before a database connection is established
-     * @throws SQLException
-     * @throws SQLTimeoutException
+     * @throws SQLException If a database access error occurs
+     * @throws SQLTimeoutException When the driver has determined that the timeout value that was specified
+     *                             by the setQueryTimeout method has been exceeded and has at least
+     *                             attempted to cancel the currently running Statement
      */
     boolean updateEventRegistrations(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
-        String eventType = this.getEventType(event.getEventID());
-        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(String.format(UPDATE_EVENT_REGISTERED, eventType)); // HACK as explained in getEvent
+        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(UPDATE_EVENT_REGISTERED);
         Array registeredUUIDDBArray = dbConnection.createArrayOf("VARCHAR", event.getRegisteredUsersAsString().toArray());
         updateEventPublishedStatement.setArray(1, registeredUUIDDBArray); // registeredUsers
         updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
@@ -365,13 +389,13 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    public ArrayList<Event> getEvents() throws IllegalStateException, SQLException {
+    public ArrayList<Event> getOpenEvents() throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
-        ArrayList <Event> returnEvents = new ArrayList<>();
+        ArrayList<Event> returnEvents = new ArrayList<>();
 
-        Statement categoriesStatement = dbConnection.createStatement();
-        ResultSet rs = categoriesStatement.executeQuery(GET_EVENTS_LIST);
+        Statement getEventsStatement = dbConnection.createStatement();
+        ResultSet rs = getEventsStatement.executeQuery(GET_OPEN_EVENTS_LIST);
 
         if (!rs.next()) { // rs.next() returns false when the query has no results
             throw new NoSuchElementException("ALERT: No events in the database");
@@ -385,8 +409,153 @@ class Connector {
     }
 
     /**
+     * Gets all the Events a user has created and can administer
+     * @param user
+     * @return ArrayList of Event objects
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs
+     */
+    public ArrayList<Event> getEventsByCreator(User user) throws IllegalStateException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        ArrayList<Event> returnEvents = new ArrayList<>();
+
+        PreparedStatement getEventsByCreatorStatement = dbConnection.prepareStatement(GET_EVENTS_LIST_BY_CREATORID);
+        getEventsByCreatorStatement.setString(1, user.getUserIDAsString());
+        ResultSet rs = getEventsByCreatorStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results
+            throw new NoSuchElementException("ALERT: No events were created by user " + user.getUserIDAsString());
+        } else {
+            do {
+                returnEvents.add(getEvent(UUID.fromString(rs.getString(1))));
+            } while (rs.next());
+        }
+
+        return returnEvents;
+    }
+
+    /**
+     * Gets all the Event a user has registered to
+     * @param user User object for which we're looking for events
+     * @return ArrayList of Event objects
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs
+     */
+    public ArrayList<Event> getEventsByRegistration(User user) throws IllegalStateException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        ArrayList<Event> returnEvents = new ArrayList<>();
+
+        PreparedStatement getEventsByCreatorStatement = dbConnection.prepareStatement(GET_EVENTS_LIST_BY_REGISTERED);
+        getEventsByCreatorStatement.setString(1, user.getUserIDAsString());
+        ResultSet rs = getEventsByCreatorStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results
+            throw new NoSuchElementException("ALERT: User " + user.getUserIDAsString() + " hasn't registered for any event");
+        } else {
+            do {
+                returnEvents.add(getEvent(UUID.fromString(rs.getString(1))));
+            } while (rs.next());
+        }
+
+        return returnEvents;
+    }
+
+    /**
+     * Gets the list of all the Notifications relevant to a specified User
+     * @param user The User object to search notifications for
+     * @return ArrayList of Notification objects - can be 0 elements long if there are notifications
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs
+     */
+    public ArrayList<Notification> getAllNotificationsByUser(User user) throws IllegalStateException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        ArrayList<Notification> returnNotifications = new ArrayList<>();
+
+        PreparedStatement getNotificationsByUserStatement = dbConnection.prepareStatement(GET_NOTIFICATIONS_BY_USER);
+        getNotificationsByUserStatement.setString(1, user.getUserIDAsString());
+        ResultSet rs = getNotificationsByUserStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results
+            return returnNotifications;
+        } else {
+            do {
+                UUID notificationID = UUID.fromString(rs.getString(1));
+                returnNotifications.add(getNotification(notificationID));
+            } while (rs.next());
+        }
+
+        return returnNotifications;
+    }
+
+    /**
+     * Returns the number of unread notifications a user have
+     * @param user User object for which we're looking for notifications
+     * @return Number of unread notifications
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs
+     */
+    public int getUnreadNotificationsCountByUser(User user) throws IllegalStateException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        int count = 0;
+
+        PreparedStatement getNotificationsByUserStatement = dbConnection.prepareStatement(GET_UNREAD_NOTIFICATIONS_BY_USER);
+        getNotificationsByUserStatement.setString(1, user.getUserIDAsString());
+        ResultSet rs = getNotificationsByUserStatement.executeQuery();
+
+        while (rs.next()) count++;
+
+        return count;
+    }
+
+    /**
+     * Returns a Notification object taken from the database given its UUID
+     * @param notificationID UUID object with the UUID of the needed notification
+     * @return Notification - An object with all its fields filled as they are in the database
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs
+     */
+    private Notification getNotification(UUID notificationID) throws IllegalStateException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        Notification returnNotification;
+
+        PreparedStatement userExistStatement = dbConnection.prepareStatement(GET_NOTIFICATION);
+        userExistStatement.setString(1, notificationID.toString());
+        ResultSet rs = userExistStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results (notificationID not present)
+            throw new IllegalArgumentException("ALERT: Specified notification does not exist");
+        } else {
+            UUID eventID = UUID.fromString(rs.getString("eventID"));
+            UUID recipientID = UUID.fromString(rs.getString("recipientID"));
+            boolean read = rs.getBoolean("read");
+            String title = rs.getString("title");
+            String content = rs.getString("content");
+            returnNotification = new Notification(notificationID, eventID, recipientID, read, title, content);
+        }
+        return returnNotification;
+    }
+
+    boolean updateNotificationRead(Notification notification) throws IllegalStateException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        int i = 0;
+        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(UPDATE_NOTIFICATION_READ);
+        updateEventPublishedStatement.setBoolean(1, notification.isRead()); // read status
+        updateEventPublishedStatement.setString(2, notification.getNotificationID().toString()); // notificationID
+        i = updateEventPublishedStatement.executeUpdate();
+        if (i != 1)
+            throw new SQLException("ALERT: Error adding updating event!\nSQL INSERT query returned " + i);
+        return true;
+    }
+
+    /**
      * Returns an Event's type given its UUID
-     * @param eventID
+     * @param eventID UUID object with the UUID of the needed event
      * @return String - Event's category as present in DB category list: ie. "soccer_game"
      * @throws IllegalStateException If called before a database connection is established
      * @throws NoSuchElementException If the given UUID is not associated to any event in the database
@@ -415,7 +584,7 @@ class Connector {
      * @param columnName - The name of the column to which the object should be extracted from
      * @param type - The type of wanted object
      * @return A generic T which contains user input and HAS to be cast to the right type - WARNING: can be null!
-     * @throws SQLException
+     * @throws SQLException If a database access error occurs
      */
     private static <T> T genericDBGetter(ResultSet rs, String columnName, Class type) throws SQLException {
         if (type.equals(Integer.class)) {
