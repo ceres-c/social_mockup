@@ -155,7 +155,7 @@ class Menu {
         sb.append("5) ").append(menuTranslation.getTranslation("mainMenuLogout")).append('\n');
         sb.append("6) ").append(menuTranslation.getTranslation("mainMenuQuit")).append('\n');
 
-        System.out.println(sb);
+        System.out.print(sb); // No trailing newline as it was already added on above line
 
         Integer userInput = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
 
@@ -214,7 +214,7 @@ class Menu {
         }
 
         Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("selectEventToShow"), false);
-        if (userSelection == null || userSelection <= 0 || userSelection > eventsInDB.size() + 1) {
+        if (userSelection == null || userSelection <= 0 || userSelection > eventsInDB.size()) {
             System.out.println(menuTranslation.getTranslation("invalidUserSelection"));
             return null;
         }
@@ -231,7 +231,7 @@ class Menu {
         sb.append("1) ").append(menuTranslation.getTranslation("showPersonalNotifications")).append('\n');
         sb.append("2) ").append(menuTranslation.getTranslation("showPersonalEvents")).append('\n');
         sb.append("3) ").append(menuTranslation.getTranslation("showRegisteredEvents")).append('\n');
-        System.out.println(sb);
+        System.out.print(sb); // No trailing newline as it was already added on above line
 
         Integer userSelection;
         do {
@@ -271,7 +271,6 @@ class Menu {
 
         String notificationReadSpacer = new String(new char[maxLen - notificationRead.length()]).replace('\0', ' ');
         String notificationUnreadSpacer = new String(new char[maxLen - notificationUnread.length()]).replace('\0', ' ');
-        String descriptionSpacer = "     ";
 
         for (int i = 0; i < notifications.size(); i++) {
             Notification notification = notifications.get(i);
@@ -283,7 +282,6 @@ class Menu {
             sb.append(statusSpacer);
             sb.append(" - ");
             sb.append(notification.getTitle()).append('\n');
-            sb.append(descriptionSpacer);
             sb.append(notification.getContent()).append('\n');
         }
         System.out.println(sb);
@@ -291,7 +289,7 @@ class Menu {
         Integer userSelection;
         while (true) {
             userSelection = InputManager.inputInteger(menuTranslation.getTranslation("selectNotificationToSetAsRead"), false);
-            if (userSelection == null || userSelection <= 0 || userSelection > notifications.size() + 1) {
+            if (userSelection == null || userSelection <= 0 || userSelection > notifications.size()) {
                 System.out.println(menuTranslation.getTranslation("invalidUserSelection"));
                 return;
             }
@@ -370,7 +368,7 @@ class Menu {
         System.out.println(sb);
 
         Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
-        if (userSelection == null || userSelection <= 0 || userSelection > categories.size() + 1) {
+        if (userSelection == null || userSelection <= 0 || userSelection > categories.size()) {
             System.out.println(menuTranslation.getTranslation("invalidUserSelection"));
             return null;
         }

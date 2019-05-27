@@ -18,11 +18,11 @@
   "noEventsInDB" : "ATTENZIONE: Nessun evento presente nel database",
   "noRegisteredEvents" : "ATTENZIONE: L'utente non è registrato ad alcun evento",
   "noCreatedEvents" : "ATTENZIONE: L'utente non ha creato alcun evento",
-  "selectEventToShow" : "Selezionare l'evento da mostrare (0 per tornare al menu precedente)",
+  "selectEventToShow" : "Selezionare l'evento da mostrare (0 per annullare)",
   "welcomeDashboard" : "Benvenuta/o nella tua area peronale",
   "showPersonalNotifications" : "Mostra notifiche personali",
   "noPersonalNotifications" : "Nessuna notifica presente",
-  "selectNotificationToSetAsRead" : "Selezionare la notifica da impostare come letta (0 per tornare al menu precedente)",
+  "selectNotificationToSetAsRead" : "Selezionare la notifica da impostare come letta (0 per annullare)",
   "errorSettingNotificationAsRead" : "Errore durante l'impostazione della notifica come letta, operazione annullata",
   "showPersonalEvents" : "Mostra i tuoi eventi",
   "showRegisteredEvents" : "Mostra le tue iscrizioni",
@@ -35,5 +35,6 @@
   "eventNotLegal" : "ATTENZIONE: I dati inseriti non sono logicamente coerenti, creazione dell'evento annullata",
   "userAlreadyRegisteredToEvent" : "ATTENZIONE: L'utente è già iscritto all'evento selezionato",
   "eventRegistrationSexMismatch" : "ATTENZIONE: L'evento è riservato a partecipanti di un sesso diverso da quello dell'utente corrente.\nL'utente non può dunque essere registrato come partecipante.",
+  "eventRegistrationMaximumReached" : "ATTENZIONE: L'evento ha già raggiunto il massimo di partecipanti",
   "eventCreationSexMismatch" : "ATTENZIONE: L'evento è stato creato correttamente, ma è riservato a partecipanti di un sesso diverso da quello dell'utente corrente.\nL'utente non può dunque essere registrato come partecipante, ma potrà comunque amministrare l'evento."
 }

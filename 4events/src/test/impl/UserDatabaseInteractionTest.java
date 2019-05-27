@@ -23,7 +23,17 @@ class UserDatabaseInteractionTest {
     private static final String CONFIG_JSON_PATH = "config.json";
     Path configPath = Paths.get(CONFIG_JSON_PATH);
     Main.jsonConfigReader config = new Main.jsonConfigReader(configPath.toString());
-    Connector myConnector = new Connector(config.getDBURL(), config.getDBUser(), config.getDBPassword());
+    Connector myConnector;
+
+    UserDatabaseInteractionTest () {
+        try {
+            myConnector = new Connector(config.getDBURL(), config.getDBUser(), config.getDBPassword());
+        } catch (SQLException e) {
+            System.out.println("ALERT: Error establishing a database connection!");
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
 
     @Test
     void userSave() {

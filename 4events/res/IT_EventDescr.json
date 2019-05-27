@@ -68,5 +68,14 @@
   "OPEN"    : "Aperto",
   "CLOSED"  : "Chiuso",
   "FAILED"  : "Fallito",
-  "ENDED"   : "Concluso"
+  "ENDED"   : "Concluso",
+  "eventSuccessTitle" : "L'evento %s avrà luogo!",
+  "eventSuccessContentIntro" : "Ciao, %s\nL'evento a cui ti eri registata/o ha raggiunto il numero di partecipanti richiesto, dunque si realizzerà!",
+  "eventSuccessContentStartDate" : "Ricorda che la data d'inizio è:%s",
+  "eventSuccessContentEndDate" : ", la data di fine è:%s",
+  "eventSuccessContentDuration" : "e l'evento durerà %s",
+  "eventSuccessContentCost" : "Il costo è pari a %.02f",
+  "eventSuccessContentConclusion" : "L'organizzatore ti aspetta a %s!\nBuona giornata",
+  "eventFailTitle" : "L'evento %s non è andato bene...",
+  "eventFailContent" : "Ciao, %s\nPurtroppo l'evento a cui ti eri registrata/o non ha raggiunto in tempo il numero di partecipanti richiesto,\npertanto è stato cancellato.\nBuona giornata"
 }

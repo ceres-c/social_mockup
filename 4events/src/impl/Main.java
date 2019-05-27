@@ -11,6 +11,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 
 public class Main {
     public enum Command {
@@ -25,7 +29,7 @@ public class Main {
 
     private static final String CONFIG_JSON_PATH = "config.json";
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         Connector myConnector = null; // Declared null to shut the compiler up, on usage it will always be properly instanced
 
         Path configJsonPath = Paths.get(CONFIG_JSON_PATH);
@@ -34,19 +38,30 @@ public class Main {
         Path menuJsonPath = Paths.get(Menu.MENU_JSON_PATH);
         jsonTranslator menuTranslation = new jsonTranslator(menuJsonPath.toString());
 
+        Path eventJsonPath = Paths.get(Event.getJsonPath());
+        jsonTranslator eventTranslation = new jsonTranslator(eventJsonPath.toString());
+
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        User currentUser;
+
         try {
             myConnector = new Connector(config.getDBURL(), config.getDBUser(), config.getDBPassword());
-        } catch (IllegalStateException e) {
-            System.exit(1); // Error is printed by the impl.Connector constructor
+        } catch (SQLException e) {
+            System.out.println("ALERT: Error establishing a database connection!");
+            e.printStackTrace();
+            System.exit(1);
         }
 
-        // TODO update events status and throw notifications
+        try {
+            updateAllEvents(myConnector, eventTranslation, currentDateTime);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
         Menu menu = Menu.getInstance(myConnector, menuTranslation);
         menu.printWelcome();
 
-        LocalDateTime currentDateTime = LocalDateTime.now();
-        User currentUser;
         while ((currentUser = menu.loginOrSignup()) == null);
 
         Command userSelection = Command.INVALID;
@@ -81,9 +96,6 @@ public class Main {
 
                     if (existingEvent != null) {
                         // Means the user has selected an event from the list
-                        Path eventJsonPath = Paths.get(Event.getJsonPath());
-                        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
-
                         System.out.println(existingEvent.detailedDescription(eventTranslation, myConnector));
 
                         if (menu.registerEvent()) {
@@ -97,11 +109,38 @@ public class Main {
                                 } else if (ex.getMessage().contains("sex is not allowed")) {
                                     System.err.println(menuTranslation.getTranslation("eventRegistrationSexMismatch"));
                                 }
+                            } catch (IllegalStateException e) {
+                                System.err.println(menuTranslation.getTranslation("eventRegistrationMaximumReached"));
                             }
 
                             if (canRegister) {
                                 try {
                                     myConnector.updateEventRegistrations(existingEvent);
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                    System.exit(1);
+                                }
+                            }
+
+                            if (existingEvent.updateState(currentDateTime)) {
+                                // This registration has brought the number of registered users to the wanted participants number
+                                try {
+                                    myConnector.updateEventState(existingEvent);
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                    System.exit(1);
+                                }
+                                // We have to fire off notifications
+                                try {
+                                    if (! existingEvent.registeredUsers.contains(existingEvent.getCreatorID())) {
+                                        // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
+                                        Notification newNotification = closedEventNotification(existingEvent, eventTranslation, existingEvent.getCreatorID(), myConnector.getUsername(existingEvent.getCreatorID()));
+                                        myConnector.insertNotification(newNotification);
+                                    }
+                                    for (UUID recipientID : existingEvent.registeredUsers) {
+                                        Notification newNotification = closedEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID));
+                                        myConnector.insertNotification(newNotification);
+                                    }
                                 } catch (SQLException e) {
                                     e.printStackTrace();
                                     System.exit(1);
@@ -127,7 +166,7 @@ public class Main {
                     if (newEvent == null) // User aborted event creation
                         break;
 
-                    newEvent.updateStatus(currentDateTime); // UNKNOWN -> VALID
+                    newEvent.updateState(currentDateTime); // UNKNOWN -> VALID
                     try {
                         myConnector.insertEvent(newEvent);
                     } catch (SQLException e) {
@@ -143,6 +182,8 @@ public class Main {
                         } else if (ex.getMessage().contains("sex is not allowed")) {
                             System.err.println(menuTranslation.getTranslation("eventCreationSexMismatch"));
                         }
+                    } catch (IllegalStateException e) {
+                        System.err.println(menuTranslation.getTranslation("eventRegistrationMaximumReached"));
                     }
 
                     if (registerUser) {
@@ -158,7 +199,7 @@ public class Main {
                         // The user wants to publish the event
                         try {
                             newEvent.publish();
-                            newEvent.updateStatus(currentDateTime); // VALID -> OPEN
+                            newEvent.updateState(currentDateTime); // VALID -> OPEN
                             try {
                                 myConnector.updateEventState(newEvent);
                                 myConnector.updateEventPublished(newEvent);
@@ -188,6 +229,106 @@ public class Main {
                     break;
             }
         }
+    }
+
+
+    /**
+     * This method iterates over all the active events in the database and check if any needs to be updated.
+     * If so it proceeds to update it and save it back into the database with its updated status.
+     * If the new status require to send notifications to user it does so.
+     * @param dbConnection Connector object with an already established connection to the database
+     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
+     * @param currentDateTime LocalDateTime object with the date to check against if status has to be updated or not
+     * @throws SQLException If a database access error occurs
+     */
+    static private void updateAllEvents(Connector dbConnection, Main.jsonTranslator eventTranslation, LocalDateTime currentDateTime) throws SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        ArrayList<Event> activeEvents;
+        try {
+            activeEvents = dbConnection.getActiveEvents();
+        } catch (NoSuchElementException e) {
+            // The database is empty
+            return;
+        }
+
+        for (Event event : activeEvents) {
+            if (event.updateState(currentDateTime)) {
+                // event has to be updated since last execution of the software
+                if (event.getCurrentState() == Event.State.CLOSED) {
+                    // event is now in closed state, notifications have to be sent.
+                    // If event was already closed we won't fall in this case
+                    if (! event.registeredUsers.contains(event.getCreatorID())) {
+                        // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
+                        Notification newNotification = closedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()));
+                        dbConnection.insertNotification(newNotification);
+                    }
+                    for (UUID recipientID : event.registeredUsers) {
+                        Notification newNotification = closedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
+                        dbConnection.insertNotification(newNotification);
+                    }
+                } else if (event.getCurrentState() == Event.State.FAILED) {
+                    if (! event.registeredUsers.contains(event.getCreatorID())) {
+                        // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
+                        Notification newNotification = failedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()));
+                        dbConnection.insertNotification(newNotification);
+                    }
+                    for (UUID recipientID : event.registeredUsers) {
+                        Notification newNotification = failedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
+                        dbConnection.insertNotification(newNotification);
+                    }
+                }
+                dbConnection.updateEventState(event);
+            }
+        }
+    }
+
+    /**
+     * Creates a Notification object with strings related to an event being CLOSED with the needed number of participants
+     * @param event Event object that is closed
+     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
+     * @param recipientID UUID of the user to send the notification to
+     * @param username String with username of the user to send the notification to
+     * @return Notification object with all the values instantiated
+     */
+    static private Notification closedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
+        StringBuilder sb = new StringBuilder();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm ");
+
+        UUID notificationID = UUID.randomUUID();
+        UUID eventID = event.getEventID();
+        boolean read = false;
+        String title = String.format(eventTranslation.getTranslation("eventSuccessTitle"), event.title);
+
+        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentIntro"), username)).append('\n');
+        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentStartDate"), event.startDate.format(dateFormatter)));
+        if (event.endDate != null)
+            sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentEndDate"), event.endDate.format(dateFormatter)));
+        if (event.endDate != null)
+            sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentDuration"), event.duration).replace("PT", ""));
+        sb.append('\n').append(String.format(eventTranslation.getTranslation("eventSuccessContentCost"), event.cost)).append('\n');
+        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentConclusion"), event.location));
+        String content = sb.toString();
+
+        return new Notification(notificationID, eventID, recipientID, read, title, content);
+    }
+
+    /**
+     * Creates a Notification object with strings related to an event being FAILED with the needed number of participants
+     * @param event Event object that is closed
+     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
+     * @param recipientID UUID of the user to send the notification to
+     * @param username String with username of the user to send the notification to
+     * @return Notification object with all the values instantiated
+     */
+    static private Notification failedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
+        UUID notificationID = UUID.randomUUID();
+        UUID eventID = event.getEventID();
+        boolean read = false;
+        String title = String.format(eventTranslation.getTranslation("eventFailTitle"), event.title);
+        String content = String.format(eventTranslation.getTranslation("eventFailContent"), username);
+
+        return new Notification(notificationID, eventID, recipientID, read, title, content);
     }
 
     /**

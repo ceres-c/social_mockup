@@ -1,5 +1,7 @@
 package impl;
 
+
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 public class Notification {
@@ -23,9 +25,7 @@ public class Notification {
         return notificationID;
     }
 
-    public UUID getEventID() {
-        return eventID;
-    }
+    public UUID getEventID() { return eventID; }
 
     public UUID getRecipientID() {
         return recipientID;

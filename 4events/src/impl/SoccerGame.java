@@ -49,15 +49,18 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      * A method to save an UserID into the Event object to keep track of registered users
      * @param user A User object from whose the UserID will be taken
      * @return True if everything went smoothly
+     * @throws IllegalStateException If the event has already reached maximum number of registered users
      * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
      *                                  i.e User is already registered or User's Sex is not appropriate for this event
      */
-    public boolean register(User user) throws IllegalArgumentException {
-        if (registeredUsers.contains(user.getUserID())) {
-            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + "is already registered to this event");
-        }
-        if (!user.getGender().equals(this.gender))
+    public boolean register(User user) throws IllegalArgumentException, IllegalStateException {
+        if (this.registeredUsers.size() == this.participantsNum) {
+            throw new IllegalStateException("ALERT: Event" + this.getEventID().toString() + " has already reached max number of users");
+        } else if (registeredUsers.contains(user.getUserID())) {
+            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " is already registered to this event");
+        } else if (!user.getGender().equals(this.gender)) {
             throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " sex is not allowed to subscribe to this event");
+        }
         registeredUsers.add(user.getUserID());
         return true;
     }
@@ -67,12 +70,13 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      * For normal operation use register(User user)
      * @param userID A UUID object
      * @return True if everything went smoothly
+     * @throws IllegalStateException If the event has already reached maximum number of registered users
      * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
      *                                  i.e User is already registered
      */
     public boolean register(UUID userID) throws IllegalArgumentException {
         if (registeredUsers.contains(userID)) {
-            throw new IllegalArgumentException("ALERT: User " + userID.toString() + "is already registered to this event");
+            throw new IllegalArgumentException("ALERT: User " + userID.toString() + " is already registered to this event");
         }
         registeredUsers.add(userID);
         return true;

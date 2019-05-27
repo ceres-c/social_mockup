@@ -59,7 +59,7 @@ class SoccerGameTest {
      */
     @Test
     void stateUnknown() {
-        assertEquals(event.getState(), "UNKNOWN");
+        assertEquals(event.getCurrentStateAsString(), "UNKNOWN");
     }
 
     /**
@@ -68,8 +68,8 @@ class SoccerGameTest {
     @Test
     void StateValid() {
         Assertions.assertAll(
-                () -> assertTrue(event.updateStatus(LocalDateTime.now())), // Date not relevant for this Test
-                () -> assertEquals(event.getState(), "VALID")
+                () -> assertTrue(event.updateState(LocalDateTime.now())), // Date not relevant for this Test
+                () -> assertEquals(event.getCurrentStateAsString(), "VALID")
         );
     }
 
@@ -78,44 +78,44 @@ class SoccerGameTest {
      */
     @Test
     void StateOpen() {
-        event.updateStatus(LocalDateTime.now()); // UNKNOWN -> VALID
+        event.updateState(LocalDateTime.now()); // UNKNOWN -> VALID
         Assertions.assertAll(
-                () -> assertTrue(event.updateStatus(LocalDateTime.parse("2019-12-01T09:00:00"))), // Same date, 1 hour before the deadline
-                () -> assertEquals(event.getState(), "OPEN")
+                () -> assertTrue(event.updateState(LocalDateTime.parse("2019-12-01T09:00:00"))), // Same date, 1 hour before the deadline
+                () -> assertEquals(event.getCurrentStateAsString(), "OPEN")
         );
     }
 
     @Test
     void StateClosed() {
-        event.updateStatus(LocalDateTime.now()); // UNKNOWN -> VALID
+        event.updateState(LocalDateTime.now()); // UNKNOWN -> VALID
         event.publish();
-        event.updateStatus(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the deadline
+        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the deadline
         for (int i = 0; i < 11; i++)
             event.register(UUID.randomUUID());
-        event.updateStatus(LocalDateTime.parse("2019-12-01T09:00:00")); // OPEN -> CLOSED
-        assertEquals(event.getState(), "CLOSED");
+        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // OPEN -> CLOSED
+        assertEquals(event.getCurrentStateAsString(), "CLOSED");
     }
 
     @Test
     void StateFailed() {
-        event.updateStatus(LocalDateTime.now()); // UNKNOWN -> VALID
+        event.updateState(LocalDateTime.now()); // UNKNOWN -> VALID
         event.publish();
-        event.updateStatus(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the deadline
+        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the deadline
         for (int i = 0; i < 5; i++) // Less users than needed
             event.register(UUID.randomUUID());
-        event.updateStatus(LocalDateTime.parse("2019-12-01T11:00:00")); // OPEN -> FAILED: Same date, 1 hour after deadline
-        assertEquals(event.getState(), "FAILED");
+        event.updateState(LocalDateTime.parse("2019-12-01T11:00:00")); // OPEN -> FAILED: Same date, 1 hour after deadline
+        assertEquals(event.getCurrentStateAsString(), "FAILED");
     }
 
     @Test
     void StateEnded() {
-        event.updateStatus(LocalDateTime.now()); // UNKNOWN -> VALID
+        event.updateState(LocalDateTime.now()); // UNKNOWN -> VALID
         event.publish();
-        event.updateStatus(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the deadline
+        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the deadline
         for (int i = 0; i < 11; i++)
             event.register(UUID.randomUUID());
-        event.updateStatus(LocalDateTime.parse("2019-12-01T09:00:00")); // OPEN -> CLOSED
-        event.updateStatus(LocalDateTime.parse("2020-01-01T00:00:00")); // CLOSED -> ENDED: 1 Day after endDate
-        assertEquals(event.getState(), "ENDED");
+        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // OPEN -> CLOSED
+        event.updateState(LocalDateTime.parse("2020-01-01T00:00:00")); // CLOSED -> ENDED: 1 Day after endDate
+        assertEquals(event.getCurrentStateAsString(), "ENDED");
     }
 }
