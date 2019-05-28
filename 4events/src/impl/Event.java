@@ -181,12 +181,12 @@ abstract class Event implements LegalObject, ReflectionInterface {
             case CLOSED:
                 if (endDate == null && duration == null) {
                     // We have no way to know how long an event will last
-                    if (startDate.plusDays(1).isAfter(currentDateTime)) {
+                    if (currentDateTime.isAfter(startDate.plusDays(1))) { // As of client request
                         this.currentState = State.ENDED;
                         return true;
                     }
                 } else if (endDate == null) {
-                    if (startDate.plus(duration).isAfter(currentDateTime)) {
+                    if (currentDateTime.isAfter(startDate.plus(duration))) {
                         // Start date + duration = end of event. If end of event is after current date, then the event has ended
                         this.currentState = State.ENDED;
                         return true;
