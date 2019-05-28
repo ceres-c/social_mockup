@@ -18,7 +18,7 @@ class SoccerGameTest {
 
     SoccerGameTest () {
         event.setAttribute("title", "Titolo Evento");
-        event.setAttribute("participantsNum", 11);
+        event.setAttribute("participantsMin", 11);
         event.setAttribute("deadline", LocalDateTime.parse("2019-12-01T10:00:00"));
         event.setAttribute("location", "Luogo Evento");
         event.setAttribute("startDate", LocalDateTime.parse("2019-12-31T08:00:00"));

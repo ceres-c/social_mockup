@@ -30,10 +30,13 @@ abstract class Event implements LegalObject, ReflectionInterface {
     private UUID            creatorID; // UUID of the user who created the event
     private String          eventTypeDB; // As present in DB category list: ie. "soccer_game"
     private boolean         published;
-    ArrayList<UUID>         registeredUsers;
+    private ArrayList<UUID> registeredUsers;
     private State           currentState;
+    private int             participantsMax;
+    /* Following fields are public to emphasize the fact that are user-controlled */
     public  String          title;
-    public  Integer         participantsNum;
+    public  Integer         participantsMin;
+    public  Integer         participantsSurplus;
     public  LocalDateTime   deadline;
     public  String          location;
     public  LocalDateTime   startDate;
@@ -43,16 +46,15 @@ abstract class Event implements LegalObject, ReflectionInterface {
     public  LocalDateTime   endDate;
     public  String          notes;
 
-    private final String[] mandatoryFields = {"participantsNum", "deadline", "location", "startDate", "cost"};
+    private final String[] mandatoryFields = {"participantsMin", "deadline", "location", "startDate", "cost"};
 
     /**
-     * This empty constructor has to be used ONLY for dummy objects.
+     * This empty constructor has to be used ONLY for dummy objects, such as those used to print field names in help section.
      * If used for Event Objects that will be manipulated, it WILL lead to NullPointerExceptions
      *
      * Here be dragons
      */
-    Event() {
-    }
+    Event() { }
 
     Event(UUID eventID, UUID creatorID, String catDb) {
         this.eventID = eventID;
@@ -75,6 +77,8 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     boolean isPublished () { return published; }
 
+    ArrayList<UUID> getRegisteredUsers() { return registeredUsers; }
+
     /**
      *
      * @return Returns an ArrayList with String representation of registered users' UUID
@@ -87,9 +91,13 @@ abstract class Event implements LegalObject, ReflectionInterface {
         return registeredUsersString;
     }
 
-    public State getCurrentState() {
-        return currentState;
-    }
+    int registeredUsersCount() { return registeredUsers == null ? 0 : registeredUsers.size(); }
+
+    boolean userAlreadyRegistered(UUID userID) { return registeredUsers != null && registeredUsers.contains(userID); }
+
+    void userRegister(UUID userID) { registeredUsers.add(userID); }
+
+    public State getCurrentState() { return currentState; }
 
     String getCurrentStateAsString() { return this.currentState.name(); }
 
@@ -99,10 +107,13 @@ abstract class Event implements LegalObject, ReflectionInterface {
      */
     void setCurrentState (String state) { currentState = State.valueOf(state); }
 
-
     static String getJsonPath() {
         return EVENT_JSON_PATH;
     }
+
+    int getParticipantsMax() { return participantsMax; }
+
+    void setParticipantsMax(int participantsMax) { this.participantsMax = participantsMax; }
 
     /**
      * A method to set an object as published.
@@ -123,7 +134,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     /**
      * A method to save an UserID into the Event object to keep track of registered users
-     * This overloaded method has to be used when a user creates an event or register for it
+     * This overloaded method has to be used when a user creates an event or register to it
      * @param user A User object from whose the UserID will be taken
      * @return True if everything went smoothly
      * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
@@ -164,14 +175,14 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
             case OPEN:
                 if (currentDateTime.isBefore(deadline) || currentDateTime.equals(deadline)) {
-                    if (registeredUsers.size() >= participantsNum) {
+                    if (registeredUsers.size() >= participantsMax) {
                         this.currentState = State.CLOSED;
                         return true;
                     }
                 } else {
-                    if (registeredUsers.size() < participantsNum) {
+                    if (registeredUsers.size() < participantsMin) {
                         this.currentState = State.FAILED;
-                    } else if (registeredUsers.size() >= participantsNum) {
+                    } else if (registeredUsers.size() >= participantsMin) {
                         this.currentState = State.CLOSED;
                     }
                     return true;
@@ -418,7 +429,9 @@ abstract class Event implements LegalObject, ReflectionInterface {
         for (UUID userUUID: registeredUsers) {
             sb.append("\t").append(userUUID.toString()).append("\n");
         }
-        sb.append("Participants num: ").append(participantsNum).append("\n");
+        sb.append("Min participants: ").append(participantsMin).append("\n");
+        sb.append("Surplus participants:").append(participantsSurplus).append('\n');
+        sb.append("Max participants: ").append(participantsMax).append('\n');
         sb.append("Deadline: ").append(deadline).append("\n");
         sb.append("Location: ").append(location).append("\n");
         sb.append("Start date: ").append(startDate).append("\n");

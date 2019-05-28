@@ -194,9 +194,9 @@ class Connector {
         StringBuilder query = new StringBuilder();
         query.append("INSERT INTO public."); // Beginning of query
         query.append(event.getEventTypeDB()).append(" ("); // category name. Eg: "INSERT INTO public.soccer_game ("
-        // Event private fields can't be retrieved via getNonNullAttributesWithValue, also, these names are common to all categories
-        query.append("eventID, creatorID, eventType, published, registeredUsers, currentState");
-        parametersNumber += 6; // Number of Event private fields
+        // Event private fields can't be retrieved via getNonNullAttributesWithValue, also, these are common to all categories
+        query.append("eventID, creatorID, eventType, published, registeredUsers, currentState, participantsMax");
+        parametersNumber += 7; // Number of Event private fields
 
         Iterator iterator;
         LinkedHashMap<String, Object> setAttributes = event.getNonNullAttributesWithValue(); // Map with all currently valid attributes
@@ -223,10 +223,12 @@ class Connector {
         parameterIndex++;
         addEventStatement.setBoolean(parameterIndex, event.isPublished()); // published
         parameterIndex++;
-        Array registeredUUIDDBArray = dbConnection.createArrayOf("VARCHAR", event.getRegisteredUsersAsString().toArray());
+        Array registeredUUIDDBArray = dbConnection.createArrayOf("VARCHAR", event.getRegisteredUsersAsString().toArray()); // registeredUsers
         addEventStatement.setArray(parameterIndex, registeredUUIDDBArray);
         parameterIndex++;
         addEventStatement.setString(parameterIndex, event.getCurrentStateAsString()); // currentState
+        parameterIndex++;
+        addEventStatement.setInt(parameterIndex, event.getParticipantsMax()); // participantsMax
         parameterIndex++;
 
         Class type; // This will hold the object type
@@ -582,6 +584,8 @@ class Connector {
             }
 
             event.setCurrentState(rs.getString("currentState"));
+
+            event.setParticipantsMax(rs.getInt("participantsMax"));
 
             LinkedHashMap<String, Class<?>> eventFieldsMap = event.getAttributesWithType();
 

@@ -418,7 +418,7 @@ class Menu {
      * Fills all the fields of a given impl.Event object
      * @throws IllegalStateException if user input is logically inconsistent (start date after end date and so on)
      */
-    void fillEventFields(Event event) throws IllegalStateException {
+    private void fillEventFields(Event event) throws IllegalStateException {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
         Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
 
@@ -441,6 +441,8 @@ class Menu {
                 }
             } while (!validUserInput);
         }
+
+        event.setAttribute("participantsMax", event.participantsMin + event.participantsSurplus);
 
         event.isLegal();
     }

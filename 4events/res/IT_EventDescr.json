@@ -15,9 +15,13 @@
     "name"  : "Titolo",
     "descr" : "Nome di fantasia attribuito all'evento"
   },
-  "participantsNum" : {
-    "name"  : "Numero di partecipanti",
-    "descr" : "Numero massimo di persone che possono partecipare all'evento"
+  "participantsMin" : {
+    "name"  : "Partecipanti minimi",
+    "descr" : "Numero minimo di persone necessarie per realizzare l'evento"
+  },
+  "participantsSurplus" : {
+    "name"  : "Partecipanti aggiuntivi",
+    "descr" : "Numero di persone che possono eventualmente aggiungersi una volta raggiunto il minimo"
   },
   "deadline" : {
     "name"  : "Termine d'iscrzione",

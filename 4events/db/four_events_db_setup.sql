@@ -22,8 +22,10 @@ CREATE TABLE public.default_event (
     published boolean NOT NULL,
     registeredUsers character(36)[], -- A event can have no registered users if created by a user which does not comply with event-specific constraints
     currentState text NOT NULL,
+    participantsMax integer NOT NULL,
     title text,
-    participantsNum integer NOT NULL,
+    participantsMin integer NOT NULL,
+    participantsSurplus integer NOT NULL,
     deadline timestamp without time zone NOT NULL,
     location text NOT NULL,
     startDate timestamp without time zone NOT NULL,
@@ -33,7 +35,7 @@ CREATE TABLE public.default_event (
     endDate timestamp without time zone,
     notes text,
     CONSTRAINT default_event_cost_check CHECK ((cost >= 0.0)),
-    CONSTRAINT default_event_participants_num_check CHECK ((participantsNum > 0)),
+    CONSTRAINT default_event_participants_num_check CHECK ((participantsMin > 0)),
     CONSTRAINT default_event_pkey PRIMARY KEY (eventID)
 );
 

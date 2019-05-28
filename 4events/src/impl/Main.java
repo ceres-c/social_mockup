@@ -132,12 +132,13 @@ public class Main {
                                 }
                                 // We have to fire off notifications
                                 try {
-                                    if (! existingEvent.registeredUsers.contains(existingEvent.getCreatorID())) {
+                                    ArrayList<UUID> registeredUsers = existingEvent.getRegisteredUsers();
+                                    if (! registeredUsers.contains(existingEvent.getCreatorID())) {
                                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
                                         Notification newNotification = closedEventNotification(existingEvent, eventTranslation, existingEvent.getCreatorID(), myConnector.getUsername(existingEvent.getCreatorID()));
                                         myConnector.insertNotification(newNotification);
                                     }
-                                    for (UUID recipientID : existingEvent.registeredUsers) {
+                                    for (UUID recipientID : registeredUsers) {
                                         Notification newNotification = closedEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID));
                                         myConnector.insertNotification(newNotification);
                                     }
@@ -212,7 +213,6 @@ public class Main {
                             break;
                         }
                     }
-
                     break;
                 }
                 case HELP:
@@ -258,22 +258,24 @@ public class Main {
                 if (event.getCurrentState() == Event.State.CLOSED) {
                     // event is now in closed state, notifications have to be sent.
                     // If event was already closed we won't fall in this case
-                    if (! event.registeredUsers.contains(event.getCreatorID())) {
+                    ArrayList<UUID> registeredUsers = event.getRegisteredUsers();
+                    if (! registeredUsers.contains(event.getCreatorID())) {
                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
                         Notification newNotification = closedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()));
                         dbConnection.insertNotification(newNotification);
                     }
-                    for (UUID recipientID : event.registeredUsers) {
+                    for (UUID recipientID : registeredUsers) {
                         Notification newNotification = closedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
                         dbConnection.insertNotification(newNotification);
                     }
                 } else if (event.getCurrentState() == Event.State.FAILED) {
-                    if (! event.registeredUsers.contains(event.getCreatorID())) {
+                    ArrayList<UUID> registeredUsers = event.getRegisteredUsers();
+                    if (! registeredUsers.contains(event.getCreatorID())) {
                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
                         Notification newNotification = failedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()));
                         dbConnection.insertNotification(newNotification);
                     }
-                    for (UUID recipientID : event.registeredUsers) {
+                    for (UUID recipientID : registeredUsers) {
                         Notification newNotification = failedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
                         dbConnection.insertNotification(newNotification);
                     }

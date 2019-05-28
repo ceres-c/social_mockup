@@ -15,16 +15,15 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     private static final String eventTypeDB = "soccer_game";
     private final String[] mandatoryFields = {"gender", "ageMin", "ageMax"};
 
-    public static final String getClassEventTypeDB() { return eventTypeDB; } // Static method to know how all the events of this type are saved in the DB
+    static String getClassEventTypeDB() { return eventTypeDB; } // Static method to know how all the events of this type are saved in the DB
 
     /**
-     * This empty constructor has to be used ONLY for dummy objects.
+     * This empty constructor has to be used ONLY for dummy objects, such as those used to print field names in help section.
      * If used for Event Objects that will be manipulated, it WILL lead to NullPointerExceptions
      *
      * Here be dragons
      */
-    public SoccerGame() {
-    }
+    SoccerGame() { }
 
     SoccerGame(UUID eventID, UUID creatorID){
         super(eventID, creatorID, eventTypeDB);
@@ -54,14 +53,14 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      *                                  i.e User is already registered or User's Sex is not appropriate for this event
      */
     public boolean register(User user) throws IllegalArgumentException, IllegalStateException {
-        if (this.registeredUsers.size() == this.participantsNum) {
+        if (this.registeredUsersCount() == this.getParticipantsMax()) {
             throw new IllegalStateException("ALERT: Event" + this.getEventID().toString() + " has already reached max number of users");
-        } else if (registeredUsers.contains(user.getUserID())) {
+        } else if (this.userAlreadyRegistered(user.getUserID())) {
             throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " is already registered to this event");
         } else if (!user.getGender().equals(this.gender)) {
             throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " sex is not allowed to subscribe to this event");
         }
-        registeredUsers.add(user.getUserID());
+        this.userRegister(user.getUserID());
         return true;
     }
 
@@ -75,10 +74,10 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      *                                  i.e User is already registered
      */
     public boolean register(UUID userID) throws IllegalArgumentException {
-        if (registeredUsers.contains(userID)) {
+        if (this.userAlreadyRegistered(userID)) {
             throw new IllegalArgumentException("ALERT: User " + userID.toString() + " is already registered to this event");
         }
-        registeredUsers.add(userID);
+        this.userRegister(userID);
         return true;
     }
 
