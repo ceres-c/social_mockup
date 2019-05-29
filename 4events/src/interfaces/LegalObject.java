@@ -1,8 +1,11 @@
 package interfaces;
 
+import java.time.LocalDateTime;
+
 public interface LegalObject {
     /**
      * Used to check if a newly created event is logically valid
+     * @param currentDate
      */
-    boolean isLegal();
+    boolean isLegal(LocalDateTime currentDate);
 }

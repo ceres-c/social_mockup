@@ -78,4 +78,70 @@ public class Notification {
     public void setContent(String content) {
         this.content = content;
     }
+
+    /**
+     * Creates a Notification object with strings related to an event being CLOSED with the needed number of participants
+     * @param event Event object that is closed
+     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
+     * @param recipientID UUID of the user to send the notification to
+     * @param username String with username of the user to send the notification to
+     * @return Notification object with all the values instantiated
+     */
+    static Notification closedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
+        StringBuilder sb = new StringBuilder();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm ");
+
+        UUID notificationID = UUID.randomUUID();
+        UUID eventID = event.getEventID();
+        boolean read = false;
+        String title = String.format(eventTranslation.getTranslation("eventSuccessTitle"), event.title);
+
+        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentIntro"), username)).append('\n');
+        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentStartDate"), event.startDate.format(dateFormatter)));
+        if (event.endDate != null)
+            sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentEndDate"), event.endDate.format(dateFormatter)));
+        if (event.endDate != null)
+            sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentDuration"), event.duration).replace("PT", ""));
+        sb.append('\n').append(String.format(eventTranslation.getTranslation("eventSuccessContentCost"), event.cost)).append('\n');
+        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentConclusion"), event.location));
+        String content = sb.toString();
+
+        return new Notification(notificationID, eventID, recipientID, read, title, content);
+    }
+
+    /**
+     * Creates a Notification object with strings related to an event being FAILED
+     * @param event Event object that is closed
+     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
+     * @param recipientID UUID of the user to send the notification to
+     * @param username String with username of the user to send the notification to
+     * @return Notification object with all the values instantiated
+     */
+    static Notification failedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
+        UUID notificationID = UUID.randomUUID();
+        UUID eventID = event.getEventID();
+        boolean read = false;
+        String title = String.format(eventTranslation.getTranslation("eventFailTitle"), event.title);
+        String content = String.format(eventTranslation.getTranslation("eventFailContent"), username);
+
+        return new Notification(notificationID, eventID, recipientID, read, title, content);
+    }
+
+    /**
+     * Creates a Notification object with strings related to an event being WITHDRAWN due to creator's deregistration
+     * @param event Event object that is closed
+     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
+     * @param recipientID UUID of the user to send the notification to
+     * @param username String with username of the user to send the notification to
+     * @return Notification object with all the values instantiated
+     */
+    static Notification withdrawnEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
+        UUID notificationID = UUID.randomUUID();
+        UUID eventID = event.getEventID();
+        boolean read = false;
+        String title = String.format(eventTranslation.getTranslation("eventWithdrawnTitle"), event.title);
+        String content = String.format(eventTranslation.getTranslation("eventWithdrawnContent"), username);
+
+        return new Notification(notificationID, eventID, recipientID, read, title, content);
+    }
 }

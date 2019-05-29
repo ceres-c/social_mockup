@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -25,6 +24,13 @@ public class Main {
         HELP,
         LOGOUT,
         QUIT
+    }
+
+    public enum DashboardCommand {
+        INVALID,
+        PERSONAL_NOTIFICATIONS,
+        CREATED_EVENTS,
+        REGISTERED_EVENTS,
     }
 
     private static final String CONFIG_JSON_PATH = "config.json";
@@ -72,21 +78,19 @@ public class Main {
                 case INVALID:
                     break;
                 case DASHBOARD:
-                    int dashboardUserSelection = menu.displayDashboard();
+                    Main.DashboardCommand dashboardUserSelection = menu.displayDashboard();
                     switch (dashboardUserSelection) {
-                        case 1:
-                            // Show Personal Notifications
+                        case PERSONAL_NOTIFICATIONS:
                             menu.displayNotifications(currentUser);
                             break;
-                        case 2:
-                            // Show Events created by currentUSer
+                        case CREATED_EVENTS:
                             menu.displayEventsByCreator(currentUser);
                             break;
-                        case 3:
-                            // Show Events currentUSer has registered to
-                            menu.displayEventsByRegistration(currentUser);
+                        case REGISTERED_EVENTS:
+                            menu.displayEventsByRegistration(currentUser, currentDateTime);
                             break;
                         default:
+                            System.out.println(menuTranslation.getTranslation("invalidUserSelection"));
                             break;
                     }
                     break;
@@ -135,11 +139,11 @@ public class Main {
                                     ArrayList<UUID> registeredUsers = existingEvent.getRegisteredUsers();
                                     if (! registeredUsers.contains(existingEvent.getCreatorID())) {
                                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
-                                        Notification newNotification = closedEventNotification(existingEvent, eventTranslation, existingEvent.getCreatorID(), myConnector.getUsername(existingEvent.getCreatorID()));
+                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, existingEvent.getCreatorID(), myConnector.getUsername(existingEvent.getCreatorID()));
                                         myConnector.insertNotification(newNotification);
                                     }
                                     for (UUID recipientID : registeredUsers) {
-                                        Notification newNotification = closedEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID));
+                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID));
                                         myConnector.insertNotification(newNotification);
                                     }
                                 } catch (SQLException e) {
@@ -157,7 +161,7 @@ public class Main {
                     boolean registerUser = false;
 
                     try {
-                        newEvent = menu.createEvent(currentUser);
+                        newEvent = menu.createEvent(currentUser, currentDateTime);
                     } catch (IllegalStateException e) {
                         System.err.println(menuTranslation.getTranslation("eventNotLegal"));
                         System.err.println(e.getMessage());
@@ -199,7 +203,7 @@ public class Main {
                     if (menu.publishEvent()) {
                         // The user wants to publish the event
                         try {
-                            newEvent.publish();
+                            newEvent.publish(currentDateTime);
                             newEvent.updateState(currentDateTime); // VALID -> OPEN
                             try {
                                 myConnector.updateEventState(newEvent);
@@ -261,76 +265,28 @@ public class Main {
                     ArrayList<UUID> registeredUsers = event.getRegisteredUsers();
                     if (! registeredUsers.contains(event.getCreatorID())) {
                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
-                        Notification newNotification = closedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()));
+                        Notification newNotification = Notification.closedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()));
                         dbConnection.insertNotification(newNotification);
                     }
                     for (UUID recipientID : registeredUsers) {
-                        Notification newNotification = closedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
+                        Notification newNotification = Notification.closedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
                         dbConnection.insertNotification(newNotification);
                     }
                 } else if (event.getCurrentState() == Event.State.FAILED) {
                     ArrayList<UUID> registeredUsers = event.getRegisteredUsers();
                     if (! registeredUsers.contains(event.getCreatorID())) {
                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
-                        Notification newNotification = failedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()));
+                        Notification newNotification = Notification.failedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()));
                         dbConnection.insertNotification(newNotification);
                     }
                     for (UUID recipientID : registeredUsers) {
-                        Notification newNotification = failedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
+                        Notification newNotification = Notification.failedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
                         dbConnection.insertNotification(newNotification);
                     }
                 }
                 dbConnection.updateEventState(event);
             }
         }
-    }
-
-    /**
-     * Creates a Notification object with strings related to an event being CLOSED with the needed number of participants
-     * @param event Event object that is closed
-     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
-     * @param recipientID UUID of the user to send the notification to
-     * @param username String with username of the user to send the notification to
-     * @return Notification object with all the values instantiated
-     */
-    static private Notification closedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
-        StringBuilder sb = new StringBuilder();
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm ");
-
-        UUID notificationID = UUID.randomUUID();
-        UUID eventID = event.getEventID();
-        boolean read = false;
-        String title = String.format(eventTranslation.getTranslation("eventSuccessTitle"), event.title);
-
-        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentIntro"), username)).append('\n');
-        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentStartDate"), event.startDate.format(dateFormatter)));
-        if (event.endDate != null)
-            sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentEndDate"), event.endDate.format(dateFormatter)));
-        if (event.endDate != null)
-            sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentDuration"), event.duration).replace("PT", ""));
-        sb.append('\n').append(String.format(eventTranslation.getTranslation("eventSuccessContentCost"), event.cost)).append('\n');
-        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentConclusion"), event.location));
-        String content = sb.toString();
-
-        return new Notification(notificationID, eventID, recipientID, read, title, content);
-    }
-
-    /**
-     * Creates a Notification object with strings related to an event being FAILED with the needed number of participants
-     * @param event Event object that is closed
-     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
-     * @param recipientID UUID of the user to send the notification to
-     * @param username String with username of the user to send the notification to
-     * @return Notification object with all the values instantiated
-     */
-    static private Notification failedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
-        UUID notificationID = UUID.randomUUID();
-        UUID eventID = event.getEventID();
-        boolean read = false;
-        String title = String.format(eventTranslation.getTranslation("eventFailTitle"), event.title);
-        String content = String.format(eventTranslation.getTranslation("eventFailContent"), username);
-
-        return new Notification(notificationID, eventID, recipientID, read, title, content);
     }
 
     /**

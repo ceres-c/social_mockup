@@ -23,7 +23,7 @@
     "name"  : "Partecipanti aggiuntivi",
     "descr" : "Numero di persone che possono eventualmente aggiungersi una volta raggiunto il minimo"
   },
-  "deadline" : {
+  "registrationDeadline" : {
     "name"  : "Termine d'iscrzione",
     "descr" : "Data ultima per effetuare l'iscrizione all'evento"
   },
@@ -38,6 +38,10 @@
   "duration" : {
     "name"  : "Durata",
     "descr" : "Durata dell'evento"
+  },
+  "deregistrationDeadline" : {
+    "name"  : "Termine di ritiro iscrizione",
+    "descr" : "Data ultima per annullare l'iscrizione all'evento"
   },
   "cost" : {
     "name"  : "Costo",
@@ -73,6 +77,7 @@
   "CLOSED"  : "Chiuso",
   "FAILED"  : "Fallito",
   "ENDED"   : "Concluso",
+  "WITHDRAWN" : "Ritirato",
   "eventSuccessTitle" : "L'evento %s avrà luogo!",
   "eventSuccessContentIntro" : "Ciao, %s\nL'evento a cui ti eri registata/o ha raggiunto il numero di partecipanti richiesto, dunque si realizzerà!",
   "eventSuccessContentStartDate" : "Ricorda che la data d'inizio è:%s",
@@ -81,5 +86,7 @@
   "eventSuccessContentCost" : "Il costo è pari a %.02f",
   "eventSuccessContentConclusion" : "L'organizzatore ti aspetta a %s!\nBuona giornata",
   "eventFailTitle" : "L'evento %s non è andato bene...",
-  "eventFailContent" : "Ciao, %s\nPurtroppo l'evento a cui ti eri registrata/o non ha raggiunto in tempo il numero di partecipanti richiesto,\npertanto è stato cancellato.\nBuona giornata"
+  "eventFailContent" : "Ciao, %s\nPurtroppo l'evento a cui ti eri registrata/o non ha raggiunto in tempo il numero di partecipanti richiesto,\npertanto è stato cancellato.\nBuona giornata",
+  "eventWithdrawnTitle" : "L'evento %s è stato annullato!",
+  "eventWithdrawnContent" : "Ciao, %s\nPurtroppo l'evento a cui ti eri registrata/o è stato ritirato dal creatore.\nBuona giornata"
 }

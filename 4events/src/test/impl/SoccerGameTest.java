@@ -15,11 +15,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class SoccerGameTest {
 
     private Event event = new SoccerGame(/* EventID */UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), /* CreatorID */UUID.fromString("123e4567-e89b-12d3-a456-556642440000"));
+    LocalDateTime currentDate = LocalDateTime.now();
 
     SoccerGameTest () {
         event.setAttribute("title", "Titolo Evento");
         event.setAttribute("participantsMin", 11);
-        event.setAttribute("deadline", LocalDateTime.parse("2019-12-01T10:00:00"));
+        event.setAttribute("registrationDeadline", LocalDateTime.parse("2019-12-01T10:00:00"));
         event.setAttribute("location", "Luogo Evento");
         event.setAttribute("startDate", LocalDateTime.parse("2019-12-31T08:00:00"));
         event.setAttribute("duration", Duration.parse("PT2H"));
@@ -51,7 +52,7 @@ class SoccerGameTest {
 
     @Test
     void publish() {
-        event.publish();
+        event.publish(currentDate);
     }
 
     /**
@@ -80,7 +81,7 @@ class SoccerGameTest {
     void StateOpen() {
         event.updateState(LocalDateTime.now()); // UNKNOWN -> VALID
         Assertions.assertAll(
-                () -> assertTrue(event.updateState(LocalDateTime.parse("2019-12-01T09:00:00"))), // Same date, 1 hour before the deadline
+                () -> assertTrue(event.updateState(LocalDateTime.parse("2019-12-01T09:00:00"))), // Same date, 1 hour before the registrationDeadline
                 () -> assertEquals(event.getCurrentStateAsString(), "OPEN")
         );
     }
@@ -88,8 +89,8 @@ class SoccerGameTest {
     @Test
     void StateClosed() {
         event.updateState(LocalDateTime.now()); // UNKNOWN -> VALID
-        event.publish();
-        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the deadline
+        event.publish(currentDate);
+        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the registrationDeadline
         for (int i = 0; i < 11; i++)
             event.register(UUID.randomUUID());
         event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // OPEN -> CLOSED
@@ -99,19 +100,19 @@ class SoccerGameTest {
     @Test
     void StateFailed() {
         event.updateState(LocalDateTime.now()); // UNKNOWN -> VALID
-        event.publish();
-        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the deadline
+        event.publish(currentDate);
+        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the registrationDeadline
         for (int i = 0; i < 5; i++) // Less users than needed
             event.register(UUID.randomUUID());
-        event.updateState(LocalDateTime.parse("2019-12-01T11:00:00")); // OPEN -> FAILED: Same date, 1 hour after deadline
+        event.updateState(LocalDateTime.parse("2019-12-01T11:00:00")); // OPEN -> FAILED: Same date, 1 hour after registrationDeadline
         assertEquals(event.getCurrentStateAsString(), "FAILED");
     }
 
     @Test
     void StateEnded() {
         event.updateState(LocalDateTime.now()); // UNKNOWN -> VALID
-        event.publish();
-        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the deadline
+        event.publish(currentDate);
+        event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // VALID -> OPEN: Same date, 1 hour before the registrationDeadline
         for (int i = 0; i < 11; i++)
             event.register(UUID.randomUUID());
         event.updateState(LocalDateTime.parse("2019-12-01T09:00:00")); // OPEN -> CLOSED

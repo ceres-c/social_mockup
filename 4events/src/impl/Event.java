@@ -21,7 +21,8 @@ abstract class Event implements LegalObject, ReflectionInterface {
         OPEN,
         CLOSED,
         FAILED,
-        ENDED
+        ENDED,
+        WITHDRAWN
     }
 
     private static final String EVENT_JSON_PATH = "res/IT_EventDescr.json";
@@ -37,16 +38,17 @@ abstract class Event implements LegalObject, ReflectionInterface {
     public  String          title;
     public  Integer         participantsMin;
     public  Integer         participantsSurplus;
-    public  LocalDateTime   deadline;
+    public  LocalDateTime   registrationDeadline;
     public  String          location;
     public  LocalDateTime   startDate;
     public  Duration        duration;
+    public  LocalDateTime   deregistrationDeadline;
     public  Double          cost;
     public  String          inQuota;
     public  LocalDateTime   endDate;
     public  String          notes;
 
-    private final String[] mandatoryFields = {"participantsMin", "deadline", "location", "startDate", "cost"};
+    private final String[] mandatoryFields = {"participantsMin", "registrationDeadline", "location", "startDate", "cost"};
 
     /**
      * This empty constructor has to be used ONLY for dummy objects, such as those used to print field names in help section.
@@ -93,13 +95,74 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     int registeredUsersCount() { return registeredUsers == null ? 0 : registeredUsers.size(); }
 
-    boolean userAlreadyRegistered(UUID userID) { return registeredUsers != null && registeredUsers.contains(userID); }
+    boolean userIDAlreadyRegistered(UUID userID) { return registeredUsers != null && registeredUsers.contains(userID); }
 
-    void userRegister(UUID userID) { registeredUsers.add(userID); }
+    /**
+     * A method to save an UserID into the Event object to keep track of registered users
+     * @param user A User object from which the UserID will be taken
+     * @return True if registration was successful
+     * @throws IllegalStateException If the event has already reached maximum number of registered users
+     * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
+     *                                  i.e User is already registered or User's Sex is not appropriate for this event
+     */
+    public boolean register(User user) throws IllegalArgumentException, IllegalStateException {
+        if (this.registeredUsersCount() == this.getParticipantsMax()) {
+            throw new IllegalStateException("ALERT: Event" + this.getEventID().toString() + " has already reached max number of users");
+        } else if (this.userIDAlreadyRegistered(user.getUserID())) {
+            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " is already registered to this event");
+        }
+        return registeredUsers.add(user.getUserID());
+    }
 
-    public State getCurrentState() { return currentState; }
+    /**
+     * A method to save a userID into the Event object that has to be used ONLY to restore an event from the database.
+     * For normal operation use register(User user)
+     * @param userID A UUID object
+     * @return True if registration was successful
+     */
+    boolean register(UUID userID) {
+        if (this.userIDAlreadyRegistered(userID)) {
+            throw new IllegalArgumentException("ALERT: User " + userID.toString() + " is already registered to this event");
+        }
+        return registeredUsers.add(userID);
+    }
+
+    /**
+     * A method to remove a userID from the Event object so that a User can be unregistered
+     * No need for overloaded method with UUID as a parameter since no deregistration action should generate from the database
+     * @param user A User object from which the UserID will be taken
+     * @return True if deregistration was succesful
+     * @throws IllegalStateException If User was not registered
+     * @throws IllegalArgumentException If the event has reached minimum number of registered users (0)
+     */
+    boolean deregister(User user, LocalDateTime currentDateTime) throws IllegalArgumentException, IllegalStateException {
+        if (this.registeredUsersCount() == 0) {
+            throw new IllegalStateException("ALERT: Event" + this.getEventID().toString() + " has already reached min number of users (0)");
+        } else if (!this.userIDAlreadyRegistered(user.getUserID())) {
+            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " was not registered to this event");
+        } else if (currentDateTime.isAfter(this.deregistrationDeadline)) {
+            throw new IllegalStateException("ALERT: Can't deregister because deregistrationDeadline has passed");
+        }
+        return registeredUsers.remove(user.getUserID());
+    }
+
+    /**
+     * This method empties out registeredUsers array and has to be used only if the Event enters withdrawn state
+     */
+    void deregisterAll() {
+        this.registeredUsers = new ArrayList<UUID>();
+    }
+
+    State getCurrentState() { return currentState; }
 
     String getCurrentStateAsString() { return this.currentState.name(); }
+
+    /**
+     *
+     */
+    void setEventWithdrawn () {
+        this.currentState = State.WITHDRAWN;
+    }
 
     /**
      * Setter that has to be used ONLY to restore an event from the database. For normal operation use updateState.
@@ -119,9 +182,10 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * A method to set an object as published.
      * updateState should be called afterwards to check for differences and update the database accordingly
      * @throws IllegalStateException If called on an event which is non-legal
+     * @param currentDateTime
      */
-    void publish() throws IllegalStateException {
-        if (!this.published && !isLegal())
+    void publish(LocalDateTime currentDateTime) throws IllegalStateException {
+        if (!this.published && !isLegal(currentDateTime))
             throw new IllegalStateException("ALERT: Non legal events can't be published");
         this.published = true;
     }
@@ -133,26 +197,6 @@ abstract class Event implements LegalObject, ReflectionInterface {
     void setPublished (boolean state) { this.published = state; }
 
     /**
-     * A method to save an UserID into the Event object to keep track of registered users
-     * This overloaded method has to be used when a user creates an event or register to it
-     * @param user A User object from whose the UserID will be taken
-     * @return True if everything went smoothly
-     * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
-     *                                  i.e User is already registered or User's Sex is not appropriate for this event
-     */
-    abstract boolean register(User user) throws IllegalArgumentException, IllegalStateException;
-
-    /**
-     * A method to save an UserID into the Event object to keep track of registered users
-     * This overloaded method has to be used to restore an event from the database
-     * @param userID A UUID object
-     * @return True if everything went smoothly
-     * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
-     *                                  i.e User is already registered
-     */
-    abstract boolean register(UUID userID) throws IllegalArgumentException, IllegalStateException;
-
-    /**
      * Control the "Status" state machine basing on current Status and date/time.
      * @param currentDateTime LocalDateTime object with the date to check against if status has to be updated or not
      * @return True if Event's status has changed and then the event has to be updated in the database as well
@@ -160,21 +204,21 @@ abstract class Event implements LegalObject, ReflectionInterface {
     boolean updateState(LocalDateTime currentDateTime) {
         switch (currentState) {
             case UNKNOWN:
-                if (this.isLegal()) {
+                if (this.isLegal(currentDateTime)) {
                     currentState = State.VALID;
                     return true;
                 }
                 break;
 
             case VALID:
-                if (this.published && (currentDateTime.isBefore(deadline) || currentDateTime.equals(deadline))) {
+                if (this.published && (currentDateTime.isBefore(registrationDeadline) || currentDateTime.equals(registrationDeadline))) {
                     currentState = State.OPEN;
                     return true;
                 }
                 break;
 
             case OPEN:
-                if (currentDateTime.isBefore(deadline) || currentDateTime.equals(deadline)) {
+                if (currentDateTime.isBefore(registrationDeadline) || currentDateTime.equals(registrationDeadline)) {
                     if (registeredUsers.size() >= participantsMax) {
                         this.currentState = State.CLOSED;
                         return true;
@@ -190,6 +234,11 @@ abstract class Event implements LegalObject, ReflectionInterface {
                 break;
 
             case CLOSED:
+                if (registeredUsers.size() < participantsMax) {
+                    // A user has withdrawn and the event is again open for new participants
+                    this.currentState = State.OPEN;
+                    return true;
+                }
                 if (endDate == null && duration == null) {
                     // We have no way to know how long an event will last
                     if (currentDateTime.isAfter(startDate.plusDays(1))) { // As of client request
@@ -211,7 +260,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
                 break;
 
             default:
-                return false; // We're in ENDED or FAILED statuses and those can't be altered
+                return false; // We're in ENDED FAILED or WITHDRAWN statuses and those can't be altered
         }
         return false;
     }
@@ -350,28 +399,28 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @return boolean:
      *      - True if legal
      * @throws IllegalStateException if user input isn't legal
+     * @param currentDate
      */
-    public boolean isLegal() throws IllegalStateException {
-        LocalDateTime currentDate = LocalDateTime.now();
+    public boolean isLegal(LocalDateTime currentDate) throws IllegalStateException {
 
-        if (startDate.isBefore(deadline))
-            throw new IllegalStateException ("ALERT: start date prior than specified deadline");
-        if (currentDate.isAfter(deadline))
-            throw new IllegalStateException ("ALERT: deadline in the past");
+        if (startDate.isBefore(registrationDeadline))
+            throw new IllegalStateException ("ALERT: start date prior than specified registrationDeadline");
+        if (currentDate.isAfter(registrationDeadline))
+            throw new IllegalStateException ("ALERT: registrationDeadline in the past");
         if (endDate != null && endDate.isBefore(startDate) && !endDate.equals(startDate))
             throw new IllegalStateException ("ALERT: end date prior start date");
-        if (duration != null) {
-            if (endDate != null && endDate.isBefore(startDate.plus(duration)))
-                throw new IllegalStateException("ALERT: end date comes before start date + duration");
-        }
+        if (duration != null && endDate != null && endDate.isBefore(startDate.plus(duration)))
+            throw new IllegalStateException("ALERT: end date comes before start date + duration");
+        if (deregistrationDeadline != null && deregistrationDeadline.isAfter(registrationDeadline))
+            throw new IllegalStateException("ALERT: deregistrationDeadline date comes after registrationDeadline");
 
         return true;
     }
 
     /**
-     * A short event description with: title, creator's username, deadline and start date
+     * A short event description with: title, creator's username, registrationDeadline and start date
      * @param eventTranslation jsonTranslator object with Event fields translation to get "pretty" string from.
-     *                         Field names such as "deadline" and similar can so be translated into human readable forms.
+     *                         Field names such as "registrationDeadline" and similar can so be translated into human readable forms.
      * @param myConnector Connector object to query the database for creator's username
      * @return Short description string
      */
@@ -380,11 +429,12 @@ abstract class Event implements LegalObject, ReflectionInterface {
         sb.append(eventTranslation.getName(this.getEventTypeDB())).append('\n');
         sb.append(eventTranslation.getName("title")).append(": ").append(this.title).append('\n');
         try {
-            sb.append(eventTranslation.getName("creator")).append(": ").append(myConnector.getUsername(this.creatorID)).append('\n');
+            sb.append(eventTranslation.getName("creator")).append(": ").append(myConnector.getUsername(this.creatorID)).append('\t');;
         } catch (SQLException | IllegalArgumentException e) {
-            sb.append(eventTranslation.getName("creator")).append(": Error fetching username\n");
+            sb.append(eventTranslation.getName("creator")).append(": Error fetching username").append('\t');;
         }
-        sb.append(eventTranslation.getName("deadline")).append(": ").append(this.deadline).append('\t');
+        sb.append(eventTranslation.getName("state")).append(": ").append(eventTranslation.getTranslation(this.currentState.name())).append('\n');
+        sb.append(eventTranslation.getName("registrationDeadline")).append(": ").append(this.registrationDeadline).append('\t');
         sb.append(eventTranslation.getName("startDate")).append(": ").append(this.startDate).append('\n');
         return sb.toString();
     }
@@ -392,7 +442,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
     /**
      * A full event description with all the fields that can be relevant for a user
      * @param eventTranslation jsonTranslator object with Event fields translation to get "pretty" string from.
-     *                         Field names such as "deadline" and similar can so be translated into human readable forms.
+     *                         Field names such as "registrationDeadline" and similar can so be translated into human readable forms.
      * @param myConnector Connector object to query the database for creator's username
      * @return Description string
      */
@@ -432,7 +482,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
         sb.append("Min participants: ").append(participantsMin).append("\n");
         sb.append("Surplus participants:").append(participantsSurplus).append('\n');
         sb.append("Max participants: ").append(participantsMax).append('\n');
-        sb.append("Deadline: ").append(deadline).append("\n");
+        sb.append("Deadline: ").append(registrationDeadline).append("\n");
         sb.append("Location: ").append(location).append("\n");
         sb.append("Start date: ").append(startDate).append("\n");
         sb.append("Duration: ").append(duration).append("\n");

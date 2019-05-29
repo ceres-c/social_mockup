@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.nio.file.Path;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import java.security.MessageDigest;
@@ -20,16 +21,16 @@ class Menu {
 
     static final String MENU_JSON_PATH = "res/IT_MenuDescr.json";
 
-    private Connector myConnector;
+    private Connector dbConnection;
     private Main.jsonTranslator menuTranslation;
 
     /**
      * Private constructor
-     * @param dbConnector a Connector object already connected to the local database
+     * @param dbConnection a Connector object already connected to the local database
      * @param menuTranslation a jsonTranslator object instantiated with menu json
      */
-    private Menu (Connector dbConnector, Main.jsonTranslator menuTranslation) {
-        this.myConnector = dbConnector;
+    private Menu (Connector dbConnection, Main.jsonTranslator menuTranslation) {
+        this.dbConnection = dbConnection;
         this.menuTranslation = menuTranslation;
     }
 
@@ -98,7 +99,7 @@ class Menu {
 
         User userFromDb = new User();
         try {
-            userFromDb = myConnector.getUser(username, hashedPassword);
+            userFromDb = dbConnection.getUser(username, hashedPassword);
         } catch (IllegalArgumentException e) {
             System.err.println(menuTranslation.getTranslation("loginError"));
             return null; // CHECK FOR NULL-OBJECT!
@@ -124,7 +125,7 @@ class Menu {
 
         User newUser = new User(username, hashedPassword, gender);
         try {
-            myConnector.insertUser(newUser);
+            dbConnection.insertUser(newUser);
         } catch (IllegalArgumentException e) {
             System.err.println(menuTranslation.getTranslation("duplicateUser"));
             return null; // CHECK FOR NULL-OBJECT!
@@ -140,7 +141,7 @@ class Menu {
     Main.Command displayMainMenu(User user) {
         int unreadNotificationsNum;
         try {
-            unreadNotificationsNum = myConnector.getUnreadNotificationsCountByUser(user);
+            unreadNotificationsNum = dbConnection.getUnreadNotificationsCountByUser(user);
         } catch (SQLException e) {
             return null;
         }
@@ -157,13 +158,13 @@ class Menu {
 
         System.out.print(sb); // No trailing newline as it was already added on above line
 
-        Integer userInput = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
+        Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
 
         Main.Command[] commands = Main.Command.values();
-        if (userInput == null ||userInput <= 0 || userInput > commands.length)
+        if (userSelection == null ||userSelection <= 0 || userSelection >= commands.length)
             return Main.Command.INVALID;
 
-        return commands[userInput];
+        return commands[userSelection];
     }
 
     /**
@@ -172,7 +173,7 @@ class Menu {
     void displayHelp() {
         System.out.println(menuTranslation.getTranslation("categoryList"));
 
-        ArrayList<String> categories = myConnector.getCategories();
+        ArrayList<String> categories = dbConnection.getCategories();
 
         EventFactory eFactory = new EventFactory();
         Event event;
@@ -199,10 +200,10 @@ class Menu {
 
         ArrayList<Event> eventsInDB = null;
         try {
-            eventsInDB = myConnector.getOpenEvents();
+            eventsInDB = dbConnection.getOpenEvents();
             for (int i = 0; i < eventsInDB.size(); i++) {
                 Event event = eventsInDB.get(i);
-                System.out.println((i + 1) + ") " + event.synopsis(eventTranslation, myConnector));
+                System.out.println((i + 1) + ") " + event.synopsis(eventTranslation, dbConnection));
             }
         } catch (SQLException e) {
             System.err.println(menuTranslation.getTranslation("SQLError"));
@@ -225,20 +226,21 @@ class Menu {
      * Prompts the user to choose among available options in his dashboard
      * @return User choice
      */
-    int displayDashboard() {
+    Main.DashboardCommand displayDashboard() {
         StringBuilder sb = new StringBuilder();
         sb.append(menuTranslation.getTranslation("welcomeDashboard")).append('\n');
         sb.append("1) ").append(menuTranslation.getTranslation("showPersonalNotifications")).append('\n');
-        sb.append("2) ").append(menuTranslation.getTranslation("showPersonalEvents")).append('\n');
+        sb.append("2) ").append(menuTranslation.getTranslation("showCreatedEvents")).append('\n');
         sb.append("3) ").append(menuTranslation.getTranslation("showRegisteredEvents")).append('\n');
         System.out.print(sb); // No trailing newline as it was already added on above line
 
-        Integer userSelection;
-        do {
-            userSelection = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
-        } while (userSelection == null || userSelection < 0 || userSelection > 3); // Update this check if adding new elements in the above stringbuilder
 
-        return userSelection;
+        Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
+        Main.DashboardCommand[] dashCommands = Main.DashboardCommand.values();
+        if (userSelection == null || userSelection < 0 || userSelection >= dashCommands.length)
+            return Main.DashboardCommand.INVALID;
+
+        return dashCommands[userSelection];
     }
 
     /**
@@ -248,7 +250,7 @@ class Menu {
     void displayNotifications (User user) {
         ArrayList<Notification> notifications;
         try {
-            notifications = myConnector.getAllNotificationsByUser(user);
+            notifications = dbConnection.getAllNotificationsByUser(user);
         } catch (SQLException e) {
             System.err.println();
             return;
@@ -258,7 +260,7 @@ class Menu {
             return;
         }
 
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(); // Lots of eye candy from here on
         sb.append(menuTranslation.getTranslation("welcomeNotification")).append('\n');
 
         String notificationRead = menuTranslation.getTranslation("notificationRead");
@@ -296,7 +298,7 @@ class Menu {
             Notification notification = notifications.get(userSelection - 1);
             notification.setRead(true);
             try {
-                myConnector.updateNotificationRead(notification);
+                dbConnection.updateNotificationRead(notification);
             } catch (SQLException e) {
                 System.err.println(menuTranslation.getTranslation("errorSettingNotificationAsRead"));
             }
@@ -311,9 +313,9 @@ class Menu {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
         Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
         try {
-            ArrayList<Event> eventsInDB = myConnector.getEventsByCreator(user);
+            ArrayList<Event> eventsInDB = dbConnection.getEventsByCreator(user);
             for (Event eventInDB: eventsInDB) {
-                System.out.println(eventInDB.synopsis(eventTranslation, myConnector));
+                System.out.println(eventInDB.synopsis(eventTranslation, dbConnection));
             }
         } catch (SQLException e) {
             System.err.println(menuTranslation.getTranslation("SQLError"));
@@ -327,21 +329,90 @@ class Menu {
     /**
      * Display all the events an user has registered to
      * @param user Current User object to fetch events
+     * @param currentDateTime
      */
-    void displayEventsByRegistration(User user) {
+    void displayEventsByRegistration(User user, LocalDateTime currentDateTime) {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
         Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+
+        ArrayList<Event> eventsInDB = null;
+
         try {
-            ArrayList<Event> eventsInDB = myConnector.getEventsByRegistration(user);
-            for (Event eventInDB: eventsInDB) {
-                System.out.println(eventInDB.synopsis(eventTranslation, myConnector));
+            eventsInDB = dbConnection.getEventsByRegistration(user);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < eventsInDB.size(); i++) {
+                sb.append(i + 1).append(") ");
+                sb.append(eventsInDB.get(i).synopsis(eventTranslation, dbConnection));
             }
+            System.out.println(sb);
         } catch (SQLException e) {
             System.err.println(menuTranslation.getTranslation("SQLError"));
             e.printStackTrace();
             System.exit(1);
         } catch (NoSuchElementException ex) {
             System.out.println(menuTranslation.getTranslation("noRegisteredEvents"));
+            return;
+        }
+
+        Integer userSelection;
+        while (true) {
+            userSelection = InputManager.inputInteger(menuTranslation.getTranslation("selectEventToDeregister"), false);
+            if (userSelection == null || userSelection <= 0 || userSelection > eventsInDB.size()) {
+                System.out.println(menuTranslation.getTranslation("invalidUserSelection"));
+                return;
+            }
+            Event event = eventsInDB.get(userSelection - 1);
+            boolean deregister = false;
+
+            try {
+                deregister = event.deregister(user, currentDateTime);
+            } catch (IllegalStateException | IllegalArgumentException e) {
+                System.err.println(menuTranslation.getTranslation("errorEventDeregistration"));
+                System.err.println(e.getMessage());
+            }
+            if (deregister) {
+                if (user.getUserID().equals(event.getCreatorID())) {
+                    // Deregistering user is the creator of the event
+                    event.setEventWithdrawn();
+                    try {
+                        dbConnection.updateEventState(event);
+                    } catch (SQLException e) {
+                        System.err.println(menuTranslation.getTranslation("errorDeregisteringEvent"));
+                        System.err.println(e.getMessage());
+                    }
+
+                    // Now generate notifications
+                    ArrayList<UUID> registeredUsers = event.getRegisteredUsers();
+                    for (UUID recipientID : registeredUsers) {
+                        try {
+                            Notification newNotification = Notification.withdrawnEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
+                            dbConnection.insertNotification(newNotification);
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                            System.exit(1);
+                        }
+                    }
+
+                    // Then deregister all the users
+                    event.deregisterAll();
+                }
+
+                try {
+                    dbConnection.updateEventRegistrations(event);
+                } catch (SQLException e) {
+                    System.err.println(menuTranslation.getTranslation("errorDeregisteringEvent"));
+                    System.err.println(e.getMessage());
+                }
+                if (event.updateState(currentDateTime)) {
+                    // A user has deregistered while the event was CLOSED, so now it's OPEN again
+                    try {
+                        dbConnection.updateEventState(event);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        System.exit(1);
+                    }
+                }
+            }
         }
     }
 
@@ -350,16 +421,17 @@ class Menu {
      * Once the user has selected the one he wants, proceeds to create an object of the right kind and fill its fields.
      * If the user chooses 0 or a number bigger than the number of available categories, null is returned.
      * @param user Current user who will be the creator of the Event
+     * @param currentDateTime
      * @return Event object of the right sub-class with required fields compiled - WARNING: can be null!
      *
      */
-    Event createEvent(User user) throws IllegalStateException {
+    Event createEvent(User user, LocalDateTime currentDateTime) throws IllegalStateException {
         EventFactory eFactory = new EventFactory();
         Event event = null;
         StringBuilder sb = new StringBuilder();
 
         sb.append(menuTranslation.getTranslation("categoryList")).append('\n');
-        ArrayList<String> categories = myConnector.getCategories();
+        ArrayList<String> categories = dbConnection.getCategories();
         for (int i = 0; i < categories.size(); i++) {
             ArrayList<String> catDescription = getCategoryDescription(categories.get(i));
             // Numbers printed below will be 1 based, so to select the right category user input hast to be decremented by one
@@ -375,7 +447,7 @@ class Menu {
 
         event = eFactory.createEvent(UUID.randomUUID(), user.getUserID(), categories.get(userSelection - 1));
 
-        fillEventFields(event);
+        fillEventFields(event, currentDateTime);
 
         return event;
     }
@@ -418,7 +490,7 @@ class Menu {
      * Fills all the fields of a given impl.Event object
      * @throws IllegalStateException if user input is logically inconsistent (start date after end date and so on)
      */
-    private void fillEventFields(Event event) throws IllegalStateException {
+    private void fillEventFields(Event event, LocalDateTime currentDateTime) throws IllegalStateException {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
         Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
 
@@ -442,9 +514,12 @@ class Menu {
             } while (!validUserInput);
         }
 
-        event.setAttribute("participantsMax", event.participantsMin + event.participantsSurplus);
+        event.setAttribute("participantsMax", event.participantsMin + (event.participantsSurplus == null ? 0 : event.participantsSurplus));
 
-        event.isLegal();
+        if (event.deregistrationDeadline == null) // As specified by client request, if deregistration deadline wasn't set...
+            event.setAttribute("deregistrationDeadline", event.registrationDeadline); // it defaults to registration deadline
+
+        event.isLegal(currentDateTime);
     }
 
     /**

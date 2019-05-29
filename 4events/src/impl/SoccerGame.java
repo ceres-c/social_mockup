@@ -5,6 +5,7 @@ import interfaces.LegalObject;
 import interfaces.ReflectionInterface;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class SoccerGame extends Event implements LegalObject, ReflectionInterface {
@@ -46,39 +47,17 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
 
     /**
      * A method to save an UserID into the Event object to keep track of registered users
-     * @param user A User object from whose the UserID will be taken
-     * @return True if everything went smoothly
+     * @param user A User object from which the UserID will be taken
+     * @return True if registration was successful
      * @throws IllegalStateException If the event has already reached maximum number of registered users
      * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
      *                                  i.e User is already registered or User's Sex is not appropriate for this event
      */
     public boolean register(User user) throws IllegalArgumentException, IllegalStateException {
-        if (this.registeredUsersCount() == this.getParticipantsMax()) {
-            throw new IllegalStateException("ALERT: Event" + this.getEventID().toString() + " has already reached max number of users");
-        } else if (this.userAlreadyRegistered(user.getUserID())) {
-            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " is already registered to this event");
-        } else if (!user.getGender().equals(this.gender)) {
+        if (!user.getGender().equals(this.gender)) {
             throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " sex is not allowed to subscribe to this event");
         }
-        this.userRegister(user.getUserID());
-        return true;
-    }
-
-    /**
-     * A method to save an UserID into the Event object that has to be used ONLY to restore an event from the database.
-     * For normal operation use register(User user)
-     * @param userID A UUID object
-     * @return True if everything went smoothly
-     * @throws IllegalStateException If the event has already reached maximum number of registered users
-     * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
-     *                                  i.e User is already registered
-     */
-    public boolean register(UUID userID) throws IllegalArgumentException {
-        if (this.userAlreadyRegistered(userID)) {
-            throw new IllegalArgumentException("ALERT: User " + userID.toString() + " is already registered to this event");
-        }
-        this.userRegister(userID);
-        return true;
+        return super.register(user.getUserID());
     }
 
     /**
@@ -96,9 +75,10 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      * @return boolean:
      *      - True if legal
      * @throws IllegalStateException if user input isn't legal
+     * @param currentDate
      */
-    public boolean isLegal() throws IllegalStateException {
-        super.isLegal();
+    public boolean isLegal(LocalDateTime currentDate) throws IllegalStateException {
+        super.isLegal(currentDate);
         if (ageMax < ageMin) throw new IllegalStateException ("ALERT: min age higher than max age");
         return true;
     }
