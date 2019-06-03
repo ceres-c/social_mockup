@@ -28,6 +28,7 @@ public class Main {
 
     public enum DashboardCommand {
         INVALID,
+        USER_PROFILE,
         PERSONAL_NOTIFICATIONS,
         CREATED_EVENTS,
         REGISTERED_EVENTS,
@@ -80,11 +81,45 @@ public class Main {
                 case DASHBOARD:
                     Main.DashboardCommand dashboardUserSelection = menu.displayDashboard();
                     switch (dashboardUserSelection) {
+                        case USER_PROFILE:
+                            User newUser = menu.displayAndEditUserProfile(currentUser);
+                            if (!newUser.equals(currentUser)) { // User made some changes to its profile
+                                try {
+                                    myConnector.updateUser(newUser); // Then Update the database
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                    System.exit(1);
+                                }
+                                currentUser = newUser; // And refresh currentUser
+                            }
+                            break;
                         case PERSONAL_NOTIFICATIONS:
                             menu.displayNotifications(currentUser);
                             break;
                         case CREATED_EVENTS:
-                            menu.displayEventsByCreator(currentUser);
+                            Event existingEvent = menu.displayAndSelectCreatedEvents(currentUser);
+                            if (existingEvent != null) {
+                                // User want to publish an event which wasn't published before
+                                System.out.println(existingEvent.detailedDescription(eventTranslation, myConnector));
+
+                                if (menu.publishEvent()) {
+                                    // The user wants to publish the event
+                                    try {
+                                        existingEvent.publish(currentDateTime);
+                                        existingEvent.updateState(currentDateTime); // VALID -> OPEN
+                                        try {
+                                            myConnector.updateEventState(existingEvent);
+                                            myConnector.updateEventPublished(existingEvent);
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                            System.exit(1);
+                                        }
+                                    } catch (IllegalStateException e) {
+                                        System.err.println(e.getMessage());
+                                        break;
+                                    }
+                                }
+                            }
                             break;
                         case REGISTERED_EVENTS:
                             menu.displayEventsByRegistration(currentUser, currentDateTime);
@@ -112,6 +147,8 @@ public class Main {
                                     System.err.println(menuTranslation.getTranslation("userAlreadyRegisteredToEvent"));
                                 } else if (ex.getMessage().contains("sex is not allowed")) {
                                     System.err.println(menuTranslation.getTranslation("eventRegistrationSexMismatch"));
+                                } else if (ex.getMessage().contains("age is not allowed")) {
+                                    System.err.println(menuTranslation.getTranslation("eventRegistrationAgeMismatch"));
                                 }
                             } catch (IllegalStateException e) {
                                 System.err.println(menuTranslation.getTranslation("eventRegistrationMaximumReached"));
@@ -186,6 +223,8 @@ public class Main {
                             System.err.println(menuTranslation.getTranslation("userAlreadyRegisteredToEvent"));
                         } else if (ex.getMessage().contains("sex is not allowed")) {
                             System.err.println(menuTranslation.getTranslation("eventCreationSexMismatch"));
+                        } else if (ex.getMessage().contains("age is not allowed")) {
+                            System.err.println(menuTranslation.getTranslation("eventCreationAgeMismatch"));
                         }
                     } catch (IllegalStateException e) {
                         System.err.println(menuTranslation.getTranslation("eventRegistrationMaximumReached"));
@@ -216,6 +255,35 @@ public class Main {
                             System.err.println(e.getMessage());
                             break;
                         }
+
+                        try { // Fire off notifications to all interested users
+                            ArrayList<UUID> userIDs = myConnector.getUserIDsByFavoriteCategory(newEvent.getEventType());
+                            for (UUID userID : userIDs) {
+                                Notification newEventNotification = Notification.newEventFavoriteCategoryNotification(newEvent, eventTranslation, userID, myConnector.getUsername(userID));
+                                myConnector.insertNotification(newEventNotification);
+                            }
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                            System.exit(1);
+                        } catch (NoSuchElementException e) {
+                            System.err.println(menuTranslation.getTranslation("nobodyInterestedInThisCategory"));
+                        }
+
+                        if (menu.sendInvite()) {
+                            // The user wants to send invites
+                            try { // Fire off notifications to all previously registered users
+                                ArrayList<UUID> userIDs = myConnector.getUserIDByOldRegistrations(currentUser.getUserID(), newEvent.getEventType());
+                                for (UUID userID : userIDs) {
+                                    Notification newEventNotification = Notification.newInviteNotification(newEvent, eventTranslation, userID, myConnector.getUsername(userID), currentUser.getUsername());
+                                    myConnector.insertNotification(newEventNotification);
+                                }
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                                System.exit(1);
+                            } catch (NoSuchElementException e) {
+                                System.err.println(menuTranslation.getTranslation("nobodyRegisteredToYourEvents"));
+                            }
+                        }
                     }
                     break;
                 }
@@ -234,7 +302,6 @@ public class Main {
             }
         }
     }
-
 
     /**
      * This method iterates over all the active events in the database and check if any needs to be updated.

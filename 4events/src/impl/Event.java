@@ -29,7 +29,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     private UUID            eventID; // UUID of the event stored in the DB
     private UUID            creatorID; // UUID of the user who created the event
-    private String          eventTypeDB; // As present in DB category list: ie. "soccer_game"
+    private String          eventType; // As present in DB category list: ie. "soccer_game"
     private boolean         published;
     private ArrayList<UUID> registeredUsers;
     private State           currentState;
@@ -61,7 +61,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
     Event(UUID eventID, UUID creatorID, String catDb) {
         this.eventID = eventID;
         this.creatorID = creatorID;
-        this.eventTypeDB = catDb;
+        this.eventType = catDb;
         this.published = false;
         this.currentState = State.UNKNOWN;
         this.registeredUsers = new ArrayList<>();
@@ -75,7 +75,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     String getCreatorIDAsString() { return creatorID.toString(); }
 
-    String getEventTypeDB() { return eventTypeDB; }
+    String getEventType() { return eventType; }
 
     boolean isPublished () { return published; }
 
@@ -426,7 +426,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      */
     String synopsis (Main.jsonTranslator eventTranslation, Connector myConnector) {
         StringBuilder sb = new StringBuilder();
-        sb.append(eventTranslation.getName(this.getEventTypeDB())).append('\n');
+        sb.append(eventTranslation.getName(this.getEventType())).append('\n');
         sb.append(eventTranslation.getName("title")).append(": ").append(this.title).append('\n');
         try {
             sb.append(eventTranslation.getName("creator")).append(": ").append(myConnector.getUsername(this.creatorID)).append('\t');;
@@ -448,7 +448,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      */
     String detailedDescription (Main.jsonTranslator eventTranslation, Connector myConnector) {
         StringBuilder sb = new StringBuilder();
-        sb.append(eventTranslation.getName(this.getEventTypeDB())).append('\n');
+        sb.append(eventTranslation.getName(this.getEventType())).append('\n');
         try {
             sb.append(eventTranslation.getName("creator")).append(": ").append(myConnector.getUsername(this.creatorID)).append('\n');
         } catch (SQLException | IllegalArgumentException e) {
@@ -472,7 +472,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
         StringBuilder sb = new StringBuilder();
         sb.append("Title: ").append(title).append("\n");
         sb.append("Creator ID: ").append(creatorID.toString()).append("\n");
-        sb.append("Database Event Type: ").append(eventTypeDB).append("\n");
+        sb.append("Database Event Type: ").append(eventType).append("\n");
         sb.append("Published: ").append(published).append("\n");
         sb.append("Status: ").append(currentState.name()).append("\n");
         sb.append("Registered users: \n");

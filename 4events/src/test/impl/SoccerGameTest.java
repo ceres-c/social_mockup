@@ -30,7 +30,7 @@ class SoccerGameTest {
         event.setAttribute("notes", "Note Evento");
         event.setAttribute("gender", new Sex("M"));
         event.setAttribute("ageMin", 20);
-        event.setAttribute("ageMax", 21);
+        event.setAttribute("ageMax", 30);
     }
 
     @Test
@@ -40,7 +40,8 @@ class SoccerGameTest {
         byte[] salt = charArrayToByteArray(username.toCharArray());
         String hashedPassword = SHA512PasswordHash(password, salt);
         final Sex gender = new Sex("M");
-        User user = new User(username, hashedPassword, gender);
+        final Integer age = 25;
+        User user = new User(username, hashedPassword, gender, age, null); // favoriteCategories not specified
 
         assertTrue(event.register(user));
     }

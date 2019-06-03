@@ -84,10 +84,10 @@ public class Notification {
      * @param event Event object that is closed
      * @param eventTranslation Main.jsonTranslator object with Event translation already opened
      * @param recipientID UUID of the user to send the notification to
-     * @param username String with username of the user to send the notification to
+     * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    static Notification closedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
+    static Notification closedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
         StringBuilder sb = new StringBuilder();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm ");
 
@@ -96,7 +96,7 @@ public class Notification {
         boolean read = false;
         String title = String.format(eventTranslation.getTranslation("eventSuccessTitle"), event.title);
 
-        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentIntro"), username)).append('\n');
+        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentIntro"), recipientUsername)).append('\n');
         sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentStartDate"), event.startDate.format(dateFormatter)));
         if (event.endDate != null)
             sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentEndDate"), event.endDate.format(dateFormatter)));
@@ -114,15 +114,15 @@ public class Notification {
      * @param event Event object that is closed
      * @param eventTranslation Main.jsonTranslator object with Event translation already opened
      * @param recipientID UUID of the user to send the notification to
-     * @param username String with username of the user to send the notification to
+     * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    static Notification failedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
+    static Notification failedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
         String title = String.format(eventTranslation.getTranslation("eventFailTitle"), event.title);
-        String content = String.format(eventTranslation.getTranslation("eventFailContent"), username);
+        String content = String.format(eventTranslation.getTranslation("eventFailContent"), recipientUsername);
 
         return new Notification(notificationID, eventID, recipientID, read, title, content);
     }
@@ -132,15 +132,52 @@ public class Notification {
      * @param event Event object that is closed
      * @param eventTranslation Main.jsonTranslator object with Event translation already opened
      * @param recipientID UUID of the user to send the notification to
-     * @param username String with username of the user to send the notification to
+     * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    static Notification withdrawnEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String username) {
+    static Notification withdrawnEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
         String title = String.format(eventTranslation.getTranslation("eventWithdrawnTitle"), event.title);
-        String content = String.format(eventTranslation.getTranslation("eventWithdrawnContent"), username);
+        String content = String.format(eventTranslation.getTranslation("eventWithdrawnContent"), recipientUsername);
+
+        return new Notification(notificationID, eventID, recipientID, read, title, content);
+    }
+
+    /**
+     * Creates a Notification object with strings related to a new event of a favorite category being published
+     * @param event Event object that has been created
+     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
+     * @param recipientID UUID of the user to send the notification to
+     * @param recipientUsername String with username of the user to send the notification to
+     * @return Notification object with all the values instantiated
+     */
+    static Notification newEventFavoriteCategoryNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
+        UUID notificationID = UUID.randomUUID();
+        UUID eventID = event.getEventID();
+        boolean read = false;
+        String title = eventTranslation.getTranslation("eventFavoriteCategoryTitle");
+        String content = String.format(eventTranslation.getTranslation("eventFavoriteCategoryContent"), recipientUsername, event.title);
+
+        return new Notification(notificationID, eventID, recipientID, read, title, content);
+    }
+
+    /**
+     * Creates a Notification object with strings related to a new event of a favorite category being published
+     * @param event Event object that has been created
+     * @param eventTranslation Main.jsonTranslator object with Event translation already opened
+     * @param recipientID UUID of the user to send the notification to
+     * @param recipientUsername String with username of the user to send the notification to
+     * @param senderUsername String with username of the user which has created the event
+     * @return Notification object with all the values instantiated
+     */
+    static Notification newInviteNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername, String senderUsername) {
+        UUID notificationID = UUID.randomUUID();
+        UUID eventID = event.getEventID();
+        boolean read = false;
+        String title = eventTranslation.getTranslation("eventInviteTitle");
+        String content = String.format(eventTranslation.getTranslation("eventInviteContent"), recipientUsername, senderUsername, event.title);
 
         return new Notification(notificationID, eventID, recipientID, read, title, content);
     }

@@ -97,7 +97,7 @@ class Menu {
         String hashedPassword = SHA512PasswordHash(password, salt);
         java.util.Arrays.fill(password, ' '); // It will still be somewhere in memory due to Java's Almighty Garbage Collector (TM), but at least we tried.
 
-        User userFromDb = new User();
+        User userFromDb;
         try {
             userFromDb = dbConnection.getUser(username, hashedPassword);
         } catch (IllegalArgumentException e) {
@@ -115,15 +115,20 @@ class Menu {
         String username;
         char[] password;
         Sex    gender;
+        Integer age;
         while ((username = InputManager.inputString("Username", true)) == null);
         while ((password = InputManager.inputPassword("Password")) == null);
-        gender = Sex.sexInput(menuTranslation.getTranslation("genderInput"), true);
-
         byte[] salt = charArrayToByteArray(username.toCharArray());
         String hashedPassword = SHA512PasswordHash(password, salt);
         java.util.Arrays.fill(password, ' '); // It will still be somewhere in memory due to Java's Almighty Garbage Collector (TM), but at least we tried.
 
-        User newUser = new User(username, hashedPassword, gender);
+        while ((gender = Sex.sexInput(menuTranslation.getTranslation("genderInput"), true)) == null);
+        age = InputManager.inputInteger(menuTranslation.getTranslation("ageInput"), true);
+        age = (age == null ? 0 : age); // age defaults to 0
+
+        String[] favoriteCategories = selectFavoriteCategories();
+
+        User newUser = new User(username, hashedPassword, gender, age, favoriteCategories);
         try {
             dbConnection.insertUser(newUser);
         } catch (IllegalArgumentException e) {
@@ -229,9 +234,10 @@ class Menu {
     Main.DashboardCommand displayDashboard() {
         StringBuilder sb = new StringBuilder();
         sb.append(menuTranslation.getTranslation("welcomeDashboard")).append('\n');
-        sb.append("1) ").append(menuTranslation.getTranslation("showPersonalNotifications")).append('\n');
-        sb.append("2) ").append(menuTranslation.getTranslation("showCreatedEvents")).append('\n');
-        sb.append("3) ").append(menuTranslation.getTranslation("showRegisteredEvents")).append('\n');
+        sb.append("1) ").append(menuTranslation.getTranslation("showUserProfile")).append('\n');
+        sb.append("2) ").append(menuTranslation.getTranslation("showPersonalNotifications")).append('\n');
+        sb.append("3) ").append(menuTranslation.getTranslation("showCreatedEvents")).append('\n');
+        sb.append("4) ").append(menuTranslation.getTranslation("showRegisteredEvents")).append('\n');
         System.out.print(sb); // No trailing newline as it was already added on above line
 
 
@@ -241,6 +247,38 @@ class Menu {
             return Main.DashboardCommand.INVALID;
 
         return dashCommands[userSelection];
+    }
+
+    /**
+     * Prints user profile and ask to change variable fields (Age and Favorite Categories)
+     * @param currentUser User object to display data to
+     * @return A new User object which might or might not be different from currentUser.
+     *         UUID, username, password and Sex are retained.
+     *         To know if the user edited other fields, the old currentUser object should be compared to this return.
+     */
+    User displayAndEditUserProfile(User currentUser) {
+        System.out.println(currentUser.detailedDescription(menuTranslation));
+        Integer age = currentUser.getAge();
+        String[] favoriteCategories = currentUser.getFavoriteCategories();
+        Character userInput; // Will hold all the different user choices in questions below
+        do {
+            userInput = InputManager.inputChar(menuTranslation.getTranslation("ageChange"), true);
+            if (userInput != null && userInput != 'S' && userInput != 'N')
+                userInput = null;
+        } while (userInput == null);
+        if (userInput == 'S') {
+            age = InputManager.inputInteger(menuTranslation.getTranslation("ageInput"), true);
+            age = (age == null ? 0 : age); // age defaults to 0
+        }
+        do {
+            userInput = InputManager.inputChar(menuTranslation.getTranslation("favoriteCategoriesChange"), true);
+            if (userInput != null && userInput != 'S' && userInput != 'N')
+                userInput = null;
+        } while (userInput == null);
+        if (userInput == 'S') {
+            favoriteCategories = selectFavoriteCategories();
+        }
+        return new User(currentUser.getUsername(), currentUser.getHashedPassword(), currentUser.getUserID(), currentUser.getGender(), age, favoriteCategories);
     }
 
     /**
@@ -309,13 +347,15 @@ class Menu {
      * Display all the events an user has created
      * @param user Current User object to fetch events
      */
-    void displayEventsByCreator(User user) {
+    Event displayAndSelectCreatedEvents(User user) {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
         Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+        ArrayList<Event> eventsInDB = null;
         try {
-            ArrayList<Event> eventsInDB = dbConnection.getEventsByCreator(user);
-            for (Event eventInDB: eventsInDB) {
-                System.out.println(eventInDB.synopsis(eventTranslation, dbConnection));
+            eventsInDB = dbConnection.getEventsByCreator(user);
+            for (int i = 0; i < eventsInDB.size(); i++) {
+                Event event = eventsInDB.get(i);
+                System.out.println((i + 1) + ") " + event.synopsis(eventTranslation, dbConnection));
             }
         } catch (SQLException e) {
             System.err.println(menuTranslation.getTranslation("SQLError"));
@@ -324,6 +364,13 @@ class Menu {
         } catch (NoSuchElementException ex) {
             System.out.println(menuTranslation.getTranslation("noCreatedEvents"));
         }
+
+        Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("selectEventToShow"), false);
+        if (userSelection == null || userSelection <= 0 || userSelection > eventsInDB.size()) {
+            System.out.println(menuTranslation.getTranslation("invalidUserSelection"));
+            return null;
+        }
+        return eventsInDB.get(userSelection - 1);
     }
 
     /**
@@ -453,7 +500,7 @@ class Menu {
     }
 
     /**
-     * Asks the user to choose if he wants to register to an Event.
+     * Asks the user to choose if he wants to register to a Event.
      * Useful only for user interaction, no information about the event itself is actually needed for this method.
      * @return true if the user wants to register, false otherwise
      *
@@ -463,6 +510,23 @@ class Menu {
 
         do {
             userInput = InputManager.inputChar(menuTranslation.getTranslation("eventRegistration"), true);
+            if (userInput != null && userInput != 'S' && userInput != 'N')
+                userInput = null;
+        } while (userInput == null);
+        return userInput == 'S';
+    }
+
+    /**
+     * Asks the user to choose if he wants to send invites for a Event.
+     * Useful only for user interaction, no information about the event itself is actually needed for this method.
+     * @return true if the user wants to send invites
+     *
+     */
+    boolean sendInvite() {
+        Character userInput = null;
+
+        do {
+            userInput = InputManager.inputChar(menuTranslation.getTranslation("sendInvite"), true);
             if (userInput != null && userInput != 'S' && userInput != 'N')
                 userInput = null;
         } while (userInput == null);
@@ -484,6 +548,40 @@ class Menu {
                 userInput = null;
         } while (userInput == null);
         return userInput == 'S';
+    }
+
+    /**
+     * Asks the user to choose which category of events he's interested to among available ones.
+     * WARNING Can return null object if the user did not select any category
+     * @return An ArrayList of String objects containing categories names as saved in database table "categories"
+     */
+    private String[] selectFavoriteCategories () {
+        ArrayList<String> availableCategories = dbConnection.getCategories();
+        StringBuilder sb = new StringBuilder();
+        int max = 0;
+
+        sb.append(menuTranslation.getTranslation("categoryList")).append('\n');
+        for (int i = 0; i < availableCategories.size(); i++) {
+            sb.append(i + 1).append(") ");
+            sb.append(this.getCategoryDescription(availableCategories.get(i)).get(0)).append('\n');
+        }
+        System.out.println(sb);
+
+        ArrayList<Integer> userNumbers = InputManager.inputNumberSequence(menuTranslation.getTranslation("favoriteCategoriesInput"), true);
+        ArrayList<String> selectedCategories = new ArrayList<>();
+        if (userNumbers == null) {
+            System.out.println(menuTranslation.getTranslation("noFavoriteCategorySelected"));
+            return null;
+        }
+        for (Integer number : userNumbers)
+            if (number - 1 >= availableCategories.size() || number <= 0) { // Categories are printed starting from number 1
+                System.err.println(menuTranslation.getTranslation("invalidFavoriteCategorySelected"));
+                return null; // out of bound
+            } else {
+                selectedCategories.add(availableCategories.get(number - 1));
+            }
+
+        return selectedCategories.toArray(new String[selectedCategories.size()]);
     }
 
     /**
@@ -559,7 +657,7 @@ class Menu {
      *              - 2nd element: Category's description
      *          If the category does not exist, empty ArrayList.
      */
-    private ArrayList<String> getCategoryDescription(String eventType) {
+    static ArrayList<String> getCategoryDescription(String eventType) {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
         Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
 

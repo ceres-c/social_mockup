@@ -88,5 +88,9 @@
   "eventFailTitle" : "L'evento %s non è andato bene...",
   "eventFailContent" : "Ciao, %s\nPurtroppo l'evento a cui ti eri registrata/o non ha raggiunto in tempo il numero di partecipanti richiesto,\npertanto è stato cancellato.\nBuona giornata",
   "eventWithdrawnTitle" : "L'evento %s è stato annullato!",
-  "eventWithdrawnContent" : "Ciao, %s\nPurtroppo l'evento a cui ti eri registrata/o è stato ritirato dal creatore.\nBuona giornata"
+  "eventWithdrawnContent" : "Ciao, %s\nPurtroppo l'evento a cui ti eri registrata/o è stato ritirato dal creatore.\nBuona giornata",
+  "eventFavoriteCategoryTitle" : "Un nuovo evento che potrebbe piacerti",
+  "eventFavoriteCategoryContent" : "Ciao, %s\nÈ appena stato creato un nuovo evento che potrebbe interessarti, si chiama %s\nVai a vedere tutte le informazioni nella bacheca eventi!",
+  "eventInviteTitle" : "Un nuovo evento che potrebbe piacerti",
+  "eventInviteContent" : "Ciao, %s\n%s, l'autore di un evento a cui hai aderito in passato, ha appena stato creato un nuovo evento che potrebbe interessarti, si chiama %s\nVai a vedere tutte le informazioni nella bacheca eventi!"
 }

@@ -17,7 +17,7 @@ class EventFactory {
         Event returnEvent;
 
         // Iterate over different classes present in the DB
-        if (eventType.equals(SoccerGame.getClassEventTypeDB())) {
+        if (eventType.equals(SoccerGame.getClassEventType())) {
             returnEvent = new SoccerGame(eventID, creatorID);
         } else {
             throw new IllegalArgumentException("ALERT: unknown event type: " + eventType);
@@ -37,7 +37,7 @@ class EventFactory {
         Event returnEvent;
 
         // Iterate over different classes present in the DB
-        if (eventType.equals(SoccerGame.getClassEventTypeDB())) {
+        if (eventType.equals(SoccerGame.getClassEventType())) {
             returnEvent = new SoccerGame();
         } else {
             throw new IllegalArgumentException("ALERT: unknown event type: " + eventType);

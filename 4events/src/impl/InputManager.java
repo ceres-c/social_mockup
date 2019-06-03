@@ -7,10 +7,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * All the methods in this class return null if the user inputs a null string
+ */
 public class InputManager {
 
     private static Scanner in = new Scanner(System.in);
@@ -21,6 +25,7 @@ public class InputManager {
      * @implNote If this method has to be changed, probably also Connector.genericDBGetter should be changed accordingly
      * @param inputDescription A descriptive text to tell the user which input is required
      * @param type java.lang.Class type of needed input
+     * @param inline if true inputDescription is shown inline, otherwise on next line prepended with an ascii arrow
      * @return A generic T which contains user input and HAS to be cast to the right type - WARNING: can be null!
      * @throws IllegalArgumentException If this method is fed an unknown class type
      */
@@ -42,7 +47,7 @@ public class InputManager {
         }
     }
 
-    public static String inputString(String inputDescription, boolean inline) {
+    static String inputString(String inputDescription, boolean inline) {
         if (inline)
             System.out.print(inputDescription + ": ");
         else
@@ -54,7 +59,7 @@ public class InputManager {
             return null; // CHECK FOR NULL-OBJECT!
     }
 
-    public static char[] inputPassword(String inputDescription) {
+    static char[] inputPassword(String inputDescription) {
         char[] password;
         java.io.Console console = System.console();
         if (console != null) { // Probably running in a standard terminal
@@ -70,7 +75,7 @@ public class InputManager {
         return password;
     }
 
-    public static Double inputDouble(String inputDescription, boolean inline) {
+    static Double inputDouble(String inputDescription, boolean inline) {
         boolean validInput;
         boolean checkPattern;
         double inputNumber = 0.00; // Just to shut the compiler up, this variable WILL be initialized once we return
@@ -111,7 +116,7 @@ public class InputManager {
             return null; // CHECK FOR NULL-OBJECT!
     }
 
-    public static Integer inputInteger(String inputDescription, boolean inline) {
+    static Integer inputInteger(String inputDescription, boolean inline) {
         boolean validInput;
         Integer inputNumber = 0; // Just to shut the compiler up, this variable WILL be initialized once we return
         do {
@@ -127,13 +132,13 @@ public class InputManager {
                 inputNumber = Integer.parseInt(input);
             } catch (NumberFormatException exception) {
                 validInput = false;
-                System.out.println("ALERT: Integer  number expected!");
+                System.out.println("ALERT: Integer number expected!");
             }
         } while (!validInput);
         return inputNumber;
     }
 
-    public static LocalDateTime inputDateTime(String inputDescription, boolean inline){
+    static LocalDateTime inputDateTime(String inputDescription, boolean inline) {
         boolean validInput = false; // Just to shut the compiler up.
         LocalDateTime date = null;  // These two variables WILL be initialized once we hit return
         do {
@@ -161,7 +166,7 @@ public class InputManager {
         return date ;
     }
 
-    static public Duration inputDuration (String inputDescription, boolean inline){
+    static Duration inputDuration(String inputDescription, boolean inline) {
         boolean validInput = false;
         Duration duration = null;
         StringBuilder durationBuilder = null;
@@ -198,5 +203,29 @@ public class InputManager {
             }
         } while (!validInput);
         return duration ;
+    }
+
+    static ArrayList<Integer> inputNumberSequence(String inputDescription, boolean inline) {
+        ArrayList<Integer> inputNumbers = new ArrayList<>();
+
+        if (inline)
+            System.out.print(inputDescription + ": ");
+        else
+            System.out.print(inputDescription + "\n--> ");
+
+        String input = in.nextLine().trim();
+        if (input.length() == 0)
+            return null; // CHECK FOR NULL-OBJECT!
+        String[] stringNumbers = input.split("\\s*,\\s*");
+        ArrayList<Integer> intNumbers = new ArrayList<>();
+        int i;
+        try {
+            for (String string : stringNumbers)
+                intNumbers.add(Integer.parseInt(string));
+        } catch (NumberFormatException e) {
+            System.out.println("ALERT: Number expected!");
+        }
+
+        return intNumbers;
     }
 }

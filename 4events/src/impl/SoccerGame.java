@@ -13,10 +13,10 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     public Integer  ageMin;
     public Integer  ageMax;
 
-    private static final String eventTypeDB = "soccer_game";
+    private static final String eventType = "soccer_game";
     private final String[] mandatoryFields = {"gender", "ageMin", "ageMax"};
 
-    static String getClassEventTypeDB() { return eventTypeDB; } // Static method to know how all the events of this type are saved in the DB
+    static String getClassEventType() { return eventType; } // Static method to know how all the events of this type are saved in the DB
 
     /**
      * This empty constructor has to be used ONLY for dummy objects, such as those used to print field names in help section.
@@ -27,7 +27,7 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     SoccerGame() { }
 
     SoccerGame(UUID eventID, UUID creatorID){
-        super(eventID, creatorID, eventTypeDB);
+        super(eventID, creatorID, eventType);
     }
 
     /**
@@ -54,8 +54,11 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      *                                  i.e User is already registered or User's Sex is not appropriate for this event
      */
     public boolean register(User user) throws IllegalArgumentException, IllegalStateException {
+        int age = user.getAge();
         if (!user.getGender().equals(this.gender)) {
             throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " sex is not allowed to subscribe to this event");
+        } else if ((age != 0 && age < ageMin) || (age != 0 && user.getAge() > ageMax)) {
+            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " age is not allowed to subscribe to this event");
         }
         return super.register(user.getUserID());
     }

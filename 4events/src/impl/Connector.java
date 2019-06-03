@@ -10,7 +10,10 @@ import java.util.*;
 
 class Connector {
     private final static String GET_USER = "SELECT * FROM public.users WHERE username = ?";
-    private final static String INSERT_USER = "INSERT INTO public.users values (?, ?, ?, ?)";
+    private final static String INSERT_USER = "INSERT INTO public.users values (?, ?, ?, ?, ?, ?)";
+    private final static String UPDATE_USER = "UPDATE public.users SET age = ?, favoriteCategories = ? WHERE userID = ?";
+    private final static String GET_USERS_BY_FAVORITE = "SELECT userID FROM public.users WHERE ? = ANY (public.users.favoriteCategories)";
+    private final static String GET_USERS_BY_PREVIOUS_REGISTRATION = "SELECT registeredUsers FROM public.default_event WHERE creatorID = ? AND eventType = ?";
     private final static String GET_USERNAME = "SELECT username FROM public.users WHERE userID = ?";
     private final static String GET_CATEGORIES_LIST = "select * from public.categories";
     private final static String GET_EVENT_TYPE = "SELECT eventType FROM public.default_event WHERE eventID = ?";
@@ -75,7 +78,7 @@ class Connector {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
         String query = GET_USER;
 
-        User returnUser = new User();
+        User returnUser;
         PreparedStatement userExistStatement = dbConnection.prepareStatement(query);
         userExistStatement.setString(1, username);
         ResultSet rs = userExistStatement.executeQuery();
@@ -85,10 +88,15 @@ class Connector {
         } else if (!hashedPassword.equals(rs.getString(2))) {
             throw new IllegalArgumentException("Wrong username or password"); // To avoid leaking information about existing users
         } else {
-            returnUser.setUsername(rs.getString("username"));
-            returnUser.setHashedPassword(rs.getString("hashedPassword"));
-            returnUser.setUserID(UUID.fromString(rs.getString("userID")));
-            returnUser.setGender(new Sex(rs.getString("gender")));
+            Array favoriteCategoriesArray = rs.getArray("favoriteCategories"); // Get a Sql.Array object from the database
+            returnUser = new User(
+                    rs.getString("username"),
+                    rs.getString("hashedPassword"),
+                    UUID.fromString(rs.getString("userID")),
+                    new Sex(rs.getString("gender")),
+                    rs.getInt("age"),
+                    favoriteCategoriesArray == null ? null : (String[])favoriteCategoriesArray.getArray() // Cast it to a Strings Array
+            );
         }
         return returnUser;
     }
@@ -111,18 +119,37 @@ class Connector {
             insertUserStatement.setString(2, user.getHashedPassword());
             insertUserStatement.setString(3, user.getUserIDAsString());
             insertUserStatement.setString(4, user.getGender().toString());
+            insertUserStatement.setObject(5, user.getAge(), java.sql.Types.INTEGER);
+            Array favoriteCategoriesArray = dbConnection.createArrayOf("TEXT", user.getFavoriteCategories()); // favoriteCategories
+            insertUserStatement.setArray(6, favoriteCategoriesArray);
             i = insertUserStatement.executeUpdate();
         } catch(java.sql.SQLException e) {
             if (e.getMessage().contains("duplicate key value")) {
                 throw new IllegalArgumentException("ALERT: Duplicate user " + user.getUsername());
+            } else {
+                throw e;
             }
-            System.out.println("ALERT: Failed to insert user in database");
-            e.printStackTrace();
         }
         if (i == 1)
             return true;
         else
             throw new SQLException("ALERT: Error adding user to the database!\nSQL INSERT query returned " + i);
+    }
+
+    boolean updateUser(User user) throws IllegalStateException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        int i = 0;
+        PreparedStatement updateUserStatement = dbConnection.prepareStatement(UPDATE_USER);
+        updateUserStatement.setObject(1, user.getAge(), java.sql.Types.INTEGER);
+        Array favoriteCategoriesArray = dbConnection.createArrayOf("TEXT", user.getFavoriteCategories()); // favoriteCategories
+        updateUserStatement.setArray(2, favoriteCategoriesArray);
+        updateUserStatement.setString(3, user.getUserIDAsString());
+        i = updateUserStatement.executeUpdate();
+
+        if (i != 1)
+            throw new SQLException("ALERT: Error updating user!\nSQL INSERT query returned " + i);
+        return true;
     }
 
     /**
@@ -147,6 +174,73 @@ class Connector {
             username = rs.getString("username");
         }
         return username;
+    }
+
+    /**
+     * Returns userID of the users which selected a given eventType as one of their favorite categories
+     * @param eventType String eventType as present in the database (e.g. "soccer_game")
+     * @return An ArrayList of UUID of users
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws IllegalArgumentException If nobody marked eventType as favorite category
+     * @throws SQLException Directly from SQL driver if something else bad happens
+     */
+    ArrayList<UUID> getUserIDsByFavoriteCategory (String eventType) throws IllegalStateException, NoSuchElementException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        ArrayList<UUID> returnUserIDs = new ArrayList<>();
+
+        PreparedStatement UUIDbyCategoriesStatement = dbConnection.prepareStatement(GET_USERS_BY_FAVORITE);
+        UUIDbyCategoriesStatement.setString(1, eventType);
+        ResultSet rs = UUIDbyCategoriesStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results
+            throw new NoSuchElementException("ALERT: No user has selected category " + eventType + " as favorite category");
+        } else {
+            do {
+                returnUserIDs.add(UUID.fromString(rs.getString(1)));
+            } while (rs.next());
+        }
+        return returnUserIDs;
+    }
+
+    /**
+     * Returns userID of the users which previously registered to an event made by creatorID of type eventType
+     * @param creatorID creator's UUID to search for
+     * @param eventType String eventType as present in the database (e.g. "soccer_game")
+     * @return An ArrayList of UUID of users - creatorID is not present in this list
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws IllegalArgumentException If nobody registered to events made by creatorID of type eventType
+     * @throws SQLException Directly from SQL driver if something else bad happens
+     */
+    ArrayList<UUID> getUserIDByOldRegistrations (UUID creatorID, String eventType) throws IllegalStateException, NoSuchElementException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        ArrayList<UUID> duplicatedUUID = new ArrayList<>();
+        ArrayList<UUID> returnUUID = new ArrayList<>();
+
+        PreparedStatement UUIDbyregistrationStatement = dbConnection.prepareStatement(GET_USERS_BY_PREVIOUS_REGISTRATION);
+        UUIDbyregistrationStatement.setString(1, creatorID.toString());
+        UUIDbyregistrationStatement.setString(2, eventType);
+        ResultSet rs = UUIDbyregistrationStatement.executeQuery();
+
+        while (rs.next()) {
+            Array registeredUsersDbArray = rs.getArray("registeredUsers"); // Get a Sql.Array object from the database
+            String[] registeredUsers = (String[])registeredUsersDbArray.getArray(); // Cast it to a Strings Array
+            for (String userID: registeredUsers) {
+                duplicatedUUID.add(UUID.fromString(userID)); // Get UUID from String and add it to array
+            }
+        }
+
+        for (UUID userID : duplicatedUUID) {
+            if (!returnUUID.contains(userID) && !userID.equals(creatorID)) { // Only unique UUID. Creator does not need to be notified
+                returnUUID.add(userID);
+            }
+        }
+        if (returnUUID.size() == 0) {
+            throw new NoSuchElementException("ALERT: No user has registered to events made by " + creatorID + " of category " + eventType);
+        }
+
+        return returnUUID;
     }
 
     /**
@@ -193,7 +287,7 @@ class Connector {
         int parametersNumber = 0;
         StringBuilder query = new StringBuilder();
         query.append("INSERT INTO public."); // Beginning of query
-        query.append(event.getEventTypeDB()).append(" ("); // category name. Eg: "INSERT INTO public.soccer_game ("
+        query.append(event.getEventType()).append(" ("); // category name. Eg: "INSERT INTO public.soccer_game ("
         // Event private fields can't be retrieved via getNonNullAttributesWithValue, also, these are common to all categories
         query.append("eventID, creatorID, eventType, published, registeredUsers, currentState, participantsMax");
         parametersNumber += 7; // Number of Event private fields
@@ -219,7 +313,7 @@ class Connector {
         parameterIndex++;
         addEventStatement.setString(parameterIndex, event.getCreatorIDAsString()); // creatorID
         parameterIndex++;
-        addEventStatement.setString(parameterIndex, event.getEventTypeDB()); // eventType
+        addEventStatement.setString(parameterIndex, event.getEventType()); // eventType
         parameterIndex++;
         addEventStatement.setBoolean(parameterIndex, event.isPublished()); // published
         parameterIndex++;
@@ -277,7 +371,7 @@ class Connector {
         updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
         i = updateEventPublishedStatement.executeUpdate();
         if (i != 1)
-            throw new SQLException("ALERT: Error adding updating event!\nSQL INSERT query returned " + i);
+            throw new SQLException("ALERT: Error updating event!\nSQL INSERT query returned " + i);
         return true;
     }
 
@@ -300,7 +394,7 @@ class Connector {
         updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
         i = updateEventPublishedStatement.executeUpdate();
         if (i != 1)
-            throw new SQLException("ALERT: Error adding updating event!\nSQL INSERT query returned " + i);
+            throw new SQLException("ALERT: Error updating event!\nSQL INSERT query returned " + i);
         return true;
     }
 
@@ -324,7 +418,7 @@ class Connector {
         updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
         i = updateEventPublishedStatement.executeUpdate();
         if (i != 1)
-            throw new SQLException("ALERT: Error adding updating event!\nSQL INSERT query returned " + i);
+            throw new SQLException("ALERT: Error updating event!\nSQL INSERT query returned " + i);
         return true;
     }
 
@@ -410,9 +504,10 @@ class Connector {
      * @param user User object for which we're looking for events
      * @return ArrayList of Event objects
      * @throws IllegalStateException If called before a database connection is established
+     * @throws NoSuchElementException If the User hasn't registered to any event
      * @throws SQLException If a database access error occurs
      */
-    ArrayList<Event> getEventsByRegistration(User user) throws IllegalStateException, SQLException {
+    ArrayList<Event> getEventsByRegistration(User user) throws IllegalStateException, NoSuchElementException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<Event> returnEvents = new ArrayList<>();
@@ -506,6 +601,13 @@ class Connector {
         return count;
     }
 
+    /**
+     * Update a Notification "read" field
+     * @param notification Notification object already populated
+     * @return True if update went smoothly
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException Directly from SQL driver if something else bad happens
+     */
     boolean updateNotificationRead(Notification notification) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
@@ -515,7 +617,7 @@ class Connector {
         updateEventPublishedStatement.setString(2, notification.getNotificationID().toString()); // notificationID
         i = updateEventPublishedStatement.executeUpdate();
         if (i != 1)
-            throw new SQLException("ALERT: Error adding updating event!\nSQL INSERT query returned " + i);
+            throw new SQLException("ALERT: Error updating notification!\nSQL INSERT query returned " + i);
         return true;
     }
 

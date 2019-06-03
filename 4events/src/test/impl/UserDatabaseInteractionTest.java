@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import static impl.Menu.SHA512PasswordHash;
@@ -18,7 +19,8 @@ class UserDatabaseInteractionTest {
     byte[] salt = charArrayToByteArray(username.toCharArray());
     String hashedPassword = SHA512PasswordHash(password, salt);
     private final Sex gender = new Sex("M");
-    private UserTest user1 = new UserTest(username, hashedPassword, gender);
+    private final Integer age = 25;
+    private UserTest user1 = new UserTest(username, hashedPassword, gender, age, null); // favooriteCategories not specified
 
     private static final String CONFIG_JSON_PATH = "config.json";
     Path configPath = Paths.get(CONFIG_JSON_PATH);
@@ -75,8 +77,8 @@ class UserDatabaseInteractionTest {
     class UserTest extends User {
         UUID userIdTest = UUID.fromString("123e4567-e89b-12d3-a456-556642440000");
 
-        public UserTest(String username, String hashedPassword, Sex gender) {
-            super(username, hashedPassword, gender);
+        public UserTest(String username, String hashedPassword, Sex gender, Integer age, String[] favoriteCategories) {
+            super(username, hashedPassword, gender, age, favoriteCategories);
         }
 
         @Override

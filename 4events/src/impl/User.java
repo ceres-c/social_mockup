@@ -2,47 +2,48 @@ package impl;
 
 import impl.fields.Sex;
 
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class User {
     private UUID userID;
     private String username;
     private String hashedPassword;
     private Sex gender;
+    private Integer age; // age defaults to 0 if the user do not set this field
+    private String[] favoriteCategories; // Can be null
 
     /**
-     * Creates an User object given username and hashedPassword
-     * This should be used to create new users
-     * @param username
-     * @param hashedPassword
+     * This should be used to create new users since it generates a random userID
+     * @param username chosen username
+     * @param hashedPassword chosen password, already hashed
+     * @param gender Sex object related to user's sex
+     * @param age User's age
      */
-    public User(String username, String hashedPassword, Sex gender) {
+    User(String username, String hashedPassword, Sex gender, Integer age, String[] favoriteCategories) {
         this.username = username;
         this.hashedPassword = hashedPassword;
         this.userID = UUID.randomUUID();
         this.gender = gender;
+        this.age = age;
+        this.favoriteCategories = favoriteCategories;
     }
 
     /**
-     * Creates an empty User object to be filled with data from the database.
-     * This should be used to log in existing users
+     * This should be used to login users already present in the database
+     * @param username chosen username
+     * @param hashedPassword chosen password, already hashed
+     * @param userID UUID object with UUID of a user already saved in the database
+     * @param gender Sex object related to user's sex
+     * @param age User's age
      */
-    public User() {}
-
-    public void setUserID(UUID userID) {
-        this.userID = userID;
-    }
-
-    public void setUsername(String username) {
+    User(String username, String hashedPassword, UUID userID, Sex gender, Integer age, String[] favoriteCategories) {
         this.username = username;
-    }
-
-    public void setHashedPassword(String hashedPassword) {
         this.hashedPassword = hashedPassword;
+        this.userID = userID;
+        this.gender = gender;
+        this.age = age;
+        this.favoriteCategories = favoriteCategories;
     }
-
-    public void setGender(Sex gender) { this.gender = gender; }
 
     public UUID getUserID() { return userID; }
 
@@ -50,24 +51,55 @@ public class User {
         return userID.toString();
     }
 
-    public String getUsername() {
+    String getUsername() {
         return username;
     }
 
-    public String getHashedPassword() {
+    String getHashedPassword() {
         return hashedPassword;
     }
 
-    public Sex getGender() { return gender; }
+    Sex getGender() { return gender; }
+
+    Integer getAge() { return age; }
+
+    String[] getFavoriteCategories() { return favoriteCategories; }
+
+    /**
+     * A full user description with all the fields that can be printed
+     * @param  menuTranslation object with Menu fields translation to get "pretty" string from.
+     *                         Field names such as "genderInput" and similar can so be translated into human readable forms.
+     * @return Description string
+     */
+    String detailedDescription(Main.jsonTranslator menuTranslation) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Username: ").append(this.username).append('\n');
+        sb.append(menuTranslation.getTranslation("genderInput")).append(": ").append(gender);
+        if (age != 0) {
+            sb.append('\n').append(menuTranslation.getTranslation("ageInput")).append(": ").append(age);
+        }
+        if (favoriteCategories != null) {
+            sb.append('\n').append(menuTranslation.getTranslation("favoriteCategoriesPrint")).append(":");
+            for (int i = 0; i < favoriteCategories.length; i++) {
+                ArrayList<String> catDescription = Menu.getCategoryDescription(favoriteCategories[i]);
+                sb.append('\n').append(i + 1).append(") ");
+                sb.append(catDescription.get(0)).append('\n'); // Category name
+                sb.append('\t').append(catDescription.get(1)); // Category description
+            }
+        }
+        return sb.toString();
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof User)) return false;
         User user = (User) o;
         return getUserID().equals(user.getUserID()) &&
                 getUsername().equals(user.getUsername()) &&
                 getHashedPassword().equals(user.getHashedPassword()) &&
-                getGender().equals(user.getGender());
+                getGender().equals(user.getGender()) &&
+                Objects.equals(getAge(), user.getAge()) &&
+                Objects.equals(getFavoriteCategories(), user.getFavoriteCategories());
     }
 }

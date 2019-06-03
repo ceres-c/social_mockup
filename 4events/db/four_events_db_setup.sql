@@ -69,6 +69,8 @@ CREATE TABLE public.users (
     hashedPassword character(128) NOT NULL,
     userID character(36) NOT NULL,
     gender character(1) NOT NULL,
+    age integer,
+    favoriteCategories text[],
     CONSTRAINT users_pkey PRIMARY KEY (username)
 );
 
