@@ -52,6 +52,22 @@ CREATE TABLE public.soccer_game (
 INHERITS (public.default_event);
 
 --
+-- Name: soccer_game; Type: TABLE; Schema: public; Owner: postgres; Inherits: default_event
+--
+
+CREATE TABLE public.mountain_hiking (
+    length integer NOT NULL,
+    heightDiff integer,
+    coachID character(36) NOT NULL,
+    coachCost int NOT NULL,
+    lodgeID character(36) NOT NULL,
+    lodgeCost int NOT NULL,
+    lunchID character(36) NOT NULL,
+    lunchCost int NOT NULL
+)
+INHERITS (public.default_event);
+
+--
 -- Name: categories; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -88,8 +104,16 @@ CREATE TABLE public.eventNotifications (
     CONSTRAINT eventNotifications_pkey PRIMARY KEY (notificationID)
 );
 
+CREATE TABLE public.optionalCost (
+    costID character(36) NOT NULL,
+    eventID character(36) NOT NULL,
+    userID character(36) NOT NULL,
+    CONSTRAINT optionalCost_pkey PRIMARY KEY (costID)
+);
+
 --
 -- Populating table with the only available category
 --
 INSERT INTO public.categories VALUES ('soccer_game');
+INSERT INTO public.categories VALUES ('mountain_hiking');
 END;

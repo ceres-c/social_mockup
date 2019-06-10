@@ -40,7 +40,7 @@
   "notificationRead" : "Letta",
   "notificationUnread" : "Non letta",
   "categoryList" : "Ecco le categorie di eventi disponibili:",
-  "eventRegistration" : "Vuoi registrti all'evento? (S|N)",
+  "eventRegistration" : "Vuoi registrarti all'evento? (S|N)",
   "sendInvite" : "Vuoi mandare un invito agli utenti che hanno già partecipato a tuoi eventi della stessa categoria? (S|N)",
   "eventPublication" : "Vuoi pubblicare l'evento nella bacheca? (S|N)",
   "eventWithdraw" : "Vuoi ritirare definitivamente l'evento? (S|N)",

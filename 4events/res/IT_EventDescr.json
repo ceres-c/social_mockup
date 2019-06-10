@@ -11,6 +11,10 @@
     "name"  : "Partita di calcio",
     "descr" : "Sport più pagato al mondo che consiste nel rincorrere un pezzo di cuoio"
   },
+  "mountain_hiking" : {
+    "name"  : "Camminata in montagna",
+    "descr" : "Amena camminata tra i monti con le caprette che fanno ciao"
+  },
   "title" : {
     "name"  : "Titolo",
     "descr" : "Nome di fantasia attribuito all'evento"
