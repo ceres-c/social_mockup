@@ -118,6 +118,27 @@ public class Main {
                                         System.err.println(e.getMessage());
                                         break;
                                     }
+                                } else if (menu.withdrawEvent()) {
+                                    // The user wants to withdraw the event
+                                    existingEvent.setEventWithdrawn();
+                                    try {
+                                        myConnector.updateEventState(existingEvent);
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                        System.exit(1);
+                                    }
+
+                                    // Generate notifications
+                                    ArrayList<UUID> registeredUsers = existingEvent.getRegisteredUsers();
+                                    for (UUID recipientID : registeredUsers) {
+                                        try {
+                                            Notification newNotification = Notification.withdrawnEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID));
+                                            myConnector.insertNotification(newNotification);
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                            System.exit(1);
+                                        }
+                                    }
                                 }
                             }
                             break;
@@ -299,6 +320,14 @@ public class Main {
                     System.exit(0);
                 default:
                     break;
+            }
+
+            currentDateTime = LocalDateTime.now(); // Refresh current date to allow event deadlines occurring now
+            try {
+                updateAllEvents(myConnector, eventTranslation, currentDateTime);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.exit(1);
             }
         }
     }

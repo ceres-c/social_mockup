@@ -43,6 +43,7 @@
   "eventRegistration" : "Vuoi registrti all'evento? (S|N)",
   "sendInvite" : "Vuoi mandare un invito agli utenti che hanno già partecipato a tuoi eventi della stessa categoria? (S|N)",
   "eventPublication" : "Vuoi pubblicare l'evento nella bacheca? (S|N)",
+  "eventWithdraw" : "Vuoi ritirare definitivamente l'evento? (S|N)",
   "eventNotLegal" : "ATTENZIONE: I dati inseriti non sono logicamente coerenti, creazione dell'evento annullata",
   "userAlreadyRegisteredToEvent" : "ATTENZIONE: L'utente è già iscritto all'evento selezionato",
   "eventRegistrationSexMismatch" : "ATTENZIONE: L'evento è riservato a partecipanti di un sesso diverso da quello dell'utente corrente.\nL'utente non può dunque essere registrato come partecipante.",

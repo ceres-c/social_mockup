@@ -363,6 +363,7 @@ class Menu {
             System.exit(1);
         } catch (NoSuchElementException ex) {
             System.out.println(menuTranslation.getTranslation("noCreatedEvents"));
+            return null;
         }
 
         Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("selectEventToShow"), false);
@@ -418,32 +419,6 @@ class Menu {
                 System.err.println(e.getMessage());
             }
             if (deregister) {
-                if (user.getUserID().equals(event.getCreatorID())) {
-                    // Deregistering user is the creator of the event
-                    event.setEventWithdrawn();
-                    try {
-                        dbConnection.updateEventState(event);
-                    } catch (SQLException e) {
-                        System.err.println(menuTranslation.getTranslation("errorDeregisteringEvent"));
-                        System.err.println(e.getMessage());
-                    }
-
-                    // Now generate notifications
-                    ArrayList<UUID> registeredUsers = event.getRegisteredUsers();
-                    for (UUID recipientID : registeredUsers) {
-                        try {
-                            Notification newNotification = Notification.withdrawnEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
-                            dbConnection.insertNotification(newNotification);
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                            System.exit(1);
-                        }
-                    }
-
-                    // Then deregister all the users
-                    event.deregisterAll();
-                }
-
                 try {
                     dbConnection.updateEventRegistrations(event);
                 } catch (SQLException e) {
@@ -544,6 +519,23 @@ class Menu {
 
         do {
             userInput = InputManager.inputChar(menuTranslation.getTranslation("eventPublication"), true);
+            if (userInput != null && userInput != 'S' && userInput != 'N')
+                userInput = null;
+        } while (userInput == null);
+        return userInput == 'S';
+    }
+
+    /**
+     * Asks the user to choose if he wants the Event to be withdrawn from the Event List.
+     * Useful only for user interaction, no information about the event itself is actually needed for this method.
+     * @return true if the event has to be withdrawn, false otherwise
+     *
+     */
+    boolean withdrawEvent() {
+        Character userInput = null;
+
+        do {
+            userInput = InputManager.inputChar(menuTranslation.getTranslation("eventWithdraw"), true);
             if (userInput != null && userInput != 'S' && userInput != 'N')
                 userInput = null;
         } while (userInput == null);
