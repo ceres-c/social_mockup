@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.*;
 import java.time.LocalDateTime;
 
+import impl.fields.OptionalCost;
 import interfaces.LegalObject;
 import interfaces.ReflectionInterface;
 
@@ -80,6 +81,14 @@ abstract class Event implements LegalObject, ReflectionInterface {
     boolean isPublished () { return published; }
 
     ArrayList<UUID> getRegisteredUsers() { return registeredUsers; }
+
+    public Double getCost() { return cost; }
+
+    // TODO method description
+    abstract LinkedHashMap<String, OptionalCost> getOptionalCosts();
+
+    // TODO method description
+    abstract LinkedHashMap<UUID, Integer> getOptionalCostsByUUID();
 
     /**
      *
@@ -462,7 +471,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
         while(iterator.hasNext()) {
             Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
-            sb.append(eventTranslation.getName((String)entry.getKey())).append(": ").append(entry.getValue()).append("\n");
+            sb.append(eventTranslation.getName((String) entry.getKey())).append(": ").append(entry.getValue()).append("\n");
         }
         return sb.toString();
     }

@@ -87,7 +87,7 @@ public class Notification {
      * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    static Notification closedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
+    static Notification closedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername, double eventCost) {
         StringBuilder sb = new StringBuilder();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm ");
 
@@ -102,7 +102,7 @@ public class Notification {
             sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentEndDate"), event.endDate.format(dateFormatter)));
         if (event.endDate != null)
             sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentDuration"), event.duration).replace("PT", ""));
-        sb.append('\n').append(String.format(eventTranslation.getTranslation("eventSuccessContentCost"), event.cost)).append('\n');
+        sb.append('\n').append(String.format(eventTranslation.getTranslation("eventSuccessContentCost"), eventCost)).append('\n');
         sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentConclusion"), event.location));
         String content = sb.toString();
 

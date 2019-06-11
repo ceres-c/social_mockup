@@ -1,5 +1,6 @@
 package impl;
 
+import impl.fields.OptionalCost;
 import impl.fields.Sex;
 
 import java.nio.file.Paths;
@@ -489,6 +490,34 @@ class Menu {
                 userInput = null;
         } while (userInput == null);
         return userInput == 'S';
+    }
+
+    // TODO method description
+    LinkedHashMap<String, OptionalCost> wantedOptionalCosts(LinkedHashMap<String, OptionalCost> allCostsMap) {
+        if (allCostsMap == null) return null;
+        Character userInput = null;
+        Iterator iterator  = allCostsMap.entrySet().iterator(); // Get an iterator for our map
+        LinkedHashMap<String, OptionalCost> wantedCosts = new LinkedHashMap<>();
+
+        Path eventJsonPath = Paths.get(Event.getJsonPath());
+        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+
+        while(iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+            String fieldTranslation = eventTranslation.getName((String) entry.getKey());
+            do {
+                userInput = InputManager.inputChar(String.format(menuTranslation.getTranslation("optionalCostRegistration"), fieldTranslation), true);
+                if (userInput != null && userInput != 'S' && userInput != 'N')
+                    userInput = null;
+            } while (userInput == null);
+            if (userInput == 'S') {
+                // The user wants this optional cost
+                wantedCosts.put((String)entry.getKey(), (OptionalCost)entry.getValue());
+            }
+        }
+        if (wantedCosts.size() == 0)
+            return null;
+        return wantedCosts;
     }
 
     /**

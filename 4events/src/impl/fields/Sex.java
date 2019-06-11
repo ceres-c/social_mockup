@@ -17,13 +17,13 @@ public class Sex {
     }
 
     static public Sex sexInput (String inputDescription, boolean inline) {
-        Character input;
+        Character userInput;
         do {
-            input = InputManager.inputChar(inputDescription + " (" + MALE + "|" + FEMALE + ")", inline);
-            if (input == null)
+            userInput = InputManager.inputChar(inputDescription + " (" + MALE + "|" + FEMALE + ")", inline);
+            if (userInput == null)
                 return null;
-        } while (! (input.equals(MALE) || input.equals(FEMALE)) );
-        return new Sex(input);
+        } while (! (userInput.equals(MALE) || userInput.equals(FEMALE)) );
+        return new Sex(userInput);
     }
 
     public char getSex() {

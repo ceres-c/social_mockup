@@ -11,10 +11,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.NoSuchElementException;
-import java.util.UUID;
+import java.util.*;
 
+// TODO se l'utente si derigistra, bisogna togliere le voci di spesa
 public class Main {
     public enum Command {
         INVALID,
@@ -177,6 +176,9 @@ public class Main {
 
                             if (canRegister) {
                                 try {
+                                    myConnector.insertOptionalCosts(menu.wantedOptionalCosts(existingEvent.getOptionalCosts()), existingEvent.getEventID(), currentUser.getUserID());
+                                    // If this kind of event has optional costs it prompts the user to choose which one he wants
+                                    // and saves them in the database
                                     myConnector.updateEventRegistrations(existingEvent);
                                 } catch (SQLException e) {
                                     e.printStackTrace();
@@ -195,13 +197,18 @@ public class Main {
                                 // We have to fire off notifications
                                 try {
                                     ArrayList<UUID> registeredUsers = existingEvent.getRegisteredUsers();
+                                    double eventCost;
                                     if (! registeredUsers.contains(existingEvent.getCreatorID())) {
+                                        ArrayList<UUID> creatorCosts = myConnector.getOptionalCosts(existingEvent.getCreatorID(), existingEvent.getEventID());
+                                        eventCost = calculateTotalCost(existingEvent, creatorCosts);
                                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
-                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, existingEvent.getCreatorID(), myConnector.getUsername(existingEvent.getCreatorID()));
+                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, existingEvent.getCreatorID(), myConnector.getUsername(existingEvent.getCreatorID()), eventCost);
                                         myConnector.insertNotification(newNotification);
                                     }
                                     for (UUID recipientID : registeredUsers) {
-                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID));
+                                        ArrayList<UUID> userCosts = myConnector.getOptionalCosts(recipientID, existingEvent.getEventID());
+                                        eventCost = calculateTotalCost(existingEvent, userCosts);
+                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID), eventCost);
                                         myConnector.insertNotification(newNotification);
                                     }
                                 } catch (SQLException e) {
@@ -216,7 +223,7 @@ public class Main {
                 }
                 case NEW_EVENT: {
                     Event newEvent = null;
-                    boolean registerUser = false;
+                    boolean canRegister = false;
 
                     try {
                         newEvent = menu.createEvent(currentUser, currentDateTime);
@@ -238,7 +245,7 @@ public class Main {
                     }
 
                     try {
-                        registerUser = newEvent.register(currentUser);
+                        canRegister = newEvent.register(currentUser);
                     } catch (IllegalArgumentException ex) {
                         if (ex.getMessage().contains("is already registered")) {
                             System.err.println(menuTranslation.getTranslation("userAlreadyRegisteredToEvent"));
@@ -251,8 +258,11 @@ public class Main {
                         System.err.println(menuTranslation.getTranslation("eventRegistrationMaximumReached"));
                     }
 
-                    if (registerUser) {
+                    if (canRegister) {
                         try {
+                            myConnector.insertOptionalCosts(menu.wantedOptionalCosts(newEvent.getOptionalCosts()), newEvent.getEventID(), currentUser.getUserID());
+                            // If this kind of event has optional costs it prompts the user to choose which one he wants
+                            // and saves them in the database
                             myConnector.updateEventRegistrations(newEvent);
                         } catch (SQLException e) {
                             e.printStackTrace();
@@ -359,13 +369,18 @@ public class Main {
                     // event is now in closed state, notifications have to be sent.
                     // If event was already closed we won't fall in this case
                     ArrayList<UUID> registeredUsers = event.getRegisteredUsers();
+                    double eventCost;
                     if (! registeredUsers.contains(event.getCreatorID())) {
                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
-                        Notification newNotification = Notification.closedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()));
+                        ArrayList<UUID> creatorCosts = dbConnection.getOptionalCosts(event.getCreatorID(), event.getEventID());
+                        eventCost = calculateTotalCost(event, creatorCosts);
+                        Notification newNotification = Notification.closedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()), eventCost);
                         dbConnection.insertNotification(newNotification);
                     }
                     for (UUID recipientID : registeredUsers) {
-                        Notification newNotification = Notification.closedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
+                        ArrayList<UUID> userCosts = dbConnection.getOptionalCosts(recipientID, event.getEventID());
+                        eventCost = calculateTotalCost(event, userCosts);
+                        Notification newNotification = Notification.closedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID), eventCost);
                         dbConnection.insertNotification(newNotification);
                     }
                 } else if (event.getCurrentState() == Event.State.FAILED) {
@@ -383,6 +398,21 @@ public class Main {
                 dbConnection.updateEventState(event);
             }
         }
+    }
+
+    // TODO method description
+    static private Double calculateTotalCost (Event event, ArrayList<UUID> wantedCosts) {
+        Double totalCost = event.getCost();
+        LinkedHashMap<UUID, Integer> optionalCosts = event.getOptionalCostsByUUID();
+        if (optionalCosts == null) {
+            return totalCost;
+        }
+        for (UUID costID : wantedCosts) {
+            if (!optionalCosts.containsKey(costID))
+                throw new IllegalArgumentException("ALERT: Wanted cost " + costID + " is not present in event's available costs"); // This should never happen (TM)
+            totalCost += optionalCosts.get(costID);
+        }
+        return totalCost;
     }
 
     /**

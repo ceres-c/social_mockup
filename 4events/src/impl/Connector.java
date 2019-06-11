@@ -1,5 +1,6 @@
 package impl;
 
+import impl.fields.OptionalCost;
 import impl.fields.Sex;
 
 import java.sql.*;
@@ -25,6 +26,8 @@ class Connector {
     private final static String UPDATE_EVENT_STATE = "UPDATE public.default_event SET currentstate = ? WHERE eventID = ?";
     private final static String UPDATE_EVENT_PUBLISHED = "UPDATE public.default_event SET published = ? WHERE eventID = ?";
     private final static String UPDATE_EVENT_REGISTERED = "UPDATE public.default_event SET registeredUsers = ? WHERE eventID = ?";
+    private final static String INSERT_OPTIONAL_COST = "INSERT INTO public.optionalCost values (?, ?, ?)";
+    private final static String GET_OPTIONAL_COSTS = "SELECT costID FROM public.optionalCost WHERE eventID = ? AND userID = ?";
     private final static String GET_NOTIFICATIONS_BY_USER = "SELECT notificationID FROM public.eventNotifications WHERE recipientID = ?";
     private final static String GET_UNREAD_NOTIFICATIONS_BY_USER = "SELECT * FROM public.eventNotifications WHERE recipientID = ? AND read = false";
     private final static String GET_NOTIFICATION = "SELECT * FROM public.eventNotifications WHERE notificationID = ?";
@@ -295,11 +298,20 @@ class Connector {
         Iterator iterator;
         LinkedHashMap<String, Object> setAttributes = event.getNonNullAttributesWithValue(); // Map with all currently valid attributes
         iterator = setAttributes.entrySet().iterator(); // Get an iterator for our map
+        Class type; // This will hold the object type
 
         while(iterator.hasNext()) {
             Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
-            query.append(", ").append(entry.getKey()); // adds the field (column) name to the query. Eg: ", title"
-            parametersNumber++;
+            type = entry.getValue().getClass();
+            if (type.equals(OptionalCost.class)) { // OptionalCost objects have 2 fields
+                query.append(", ").append(entry.getKey()).append("ID"); // COSTNAMEID - UUID of the cost
+                parametersNumber++;
+                query.append(", ").append(entry.getKey()).append("Amount"); // COSTNAMEAmount - Actual cost of the option
+                parametersNumber++;
+            } else {
+                query.append(", ").append(entry.getKey()); // adds the field (column) name to the query. Eg: ", title"
+                parametersNumber++;
+            }
         }
         query.append(") VALUES (?"); // Terminates fields (columns) list and starts placeholders. Notice the first question mark!
         for (int i = 0; i < parametersNumber - 1; i++) // Minus one since the first question mark is present in the above line
@@ -325,7 +337,6 @@ class Connector {
         addEventStatement.setInt(parameterIndex, event.getParticipantsMax()); // participantsMax
         parameterIndex++;
 
-        Class type; // This will hold the object type
         iterator = setAttributes.entrySet().iterator(); // Reset to first element
         while(iterator.hasNext()) {
             Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
@@ -342,6 +353,10 @@ class Connector {
                 addEventStatement.setLong(parameterIndex, ((Duration) entry.getValue()).getSeconds());
             } else if (type.equals(Sex.class)) {
                 addEventStatement.setString(parameterIndex, ((Sex) entry.getValue()).toString());
+            } else if (type.equals(OptionalCost.class)) {
+                addEventStatement.setString(parameterIndex, ((OptionalCost) entry.getValue()).getCostID().toString()); // OptionalCost ID
+                parameterIndex++;
+                addEventStatement.setInt(parameterIndex, ((OptionalCost) entry.getValue()).getCostAmount()); // OptionalCost Amount
             } else {
                 throw new IllegalArgumentException("ALERT: Unexpected input type: " + type);
             }
@@ -525,6 +540,50 @@ class Connector {
         }
 
         return returnEvents;
+    }
+
+    // TODO method description
+    void insertOptionalCosts(LinkedHashMap<String, OptionalCost> optionalCosts, UUID eventID, UUID userID) throws IllegalStateException, NoSuchElementException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+        if (optionalCosts == null) return;
+
+        Iterator iterator  = optionalCosts.entrySet().iterator(); // Get an iterator for our map
+
+        int i = 0;
+        while(iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+            PreparedStatement insertOptionalCostStatement = dbConnection.prepareStatement(INSERT_OPTIONAL_COST);
+            OptionalCost optionalCost = (OptionalCost) entry.getValue();
+            insertOptionalCostStatement.setString(1, optionalCost.getCostID().toString());
+            insertOptionalCostStatement.setString(2, eventID.toString());
+            insertOptionalCostStatement.setString(3, userID.toString());
+            i = insertOptionalCostStatement.executeUpdate();
+            if (i != 1)
+                throw new SQLException("ALERT: Error adding user to the database!\nSQL INSERT query returned " + i);
+        }
+    }
+
+    // TODO method description
+    ArrayList<UUID> getOptionalCosts(UUID userID, UUID eventID) throws IllegalStateException, SQLException {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        ArrayList<UUID> returnOptionalCosts = new ArrayList<>();
+
+        PreparedStatement getOptionalCostsStatement = dbConnection.prepareStatement(GET_OPTIONAL_COSTS);
+        getOptionalCostsStatement.setString(1, eventID.toString());
+        getOptionalCostsStatement.setString(2, userID.toString());
+        ResultSet rs = getOptionalCostsStatement.executeQuery();
+
+        if (!rs.next()) { // rs.next() returns false when the query has no results
+            return returnOptionalCosts;
+        } else {
+            do {
+                UUID costID = UUID.fromString(rs.getString(1));
+                returnOptionalCosts.add(costID);
+            } while (rs.next());
+        }
+
+        return returnOptionalCosts;
     }
 
     /**
@@ -750,10 +809,20 @@ class Connector {
             return (T) rs.getObject(columnName, LocalDateTime.class);
         } else if (type.equals(Duration.class)) {
             int seconds = rs.getInt(columnName);
-            if (seconds == 0) return null; // Just for a matter of consistency
+            if (seconds == 0) {
+                return null; // Just for a matter of consistency
+            }
             return (T) Duration.of(seconds, ChronoUnit.SECONDS);
         } else if (type.equals(Sex.class)) {
             return (T) new Sex(rs.getString(columnName));
+        } else if (type.equals(OptionalCost.class)) {
+            String optionalCostIDString = rs.getString(columnName + "ID");
+            if (optionalCostIDString == null) {
+                return null; // Just for a matter of consistency
+            }
+            UUID costID = UUID.fromString(optionalCostIDString);
+            Integer costAmount = rs.getInt(columnName + "Amount");
+            return (T) new OptionalCost(costID, costAmount);
         } else {
             throw new IllegalArgumentException("ALERT: Unexpected input type: " + type);
         }

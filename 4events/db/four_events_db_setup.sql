@@ -58,12 +58,12 @@ INHERITS (public.default_event);
 CREATE TABLE public.mountain_hiking (
     length integer NOT NULL,
     heightDiff integer,
-    coachID character(36) NOT NULL,
-    coachCost int NOT NULL,
-    lodgeID character(36) NOT NULL,
-    lodgeCost int NOT NULL,
-    lunchID character(36) NOT NULL,
-    lunchCost int NOT NULL
+    coachID character(36),
+    coachAmount int,
+    lodgeID character(36),
+    lodgeAmount int,
+    lunchID character(36),
+    lunchAmount int
 )
 INHERITS (public.default_event);
 

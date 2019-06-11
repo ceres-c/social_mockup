@@ -1,5 +1,6 @@
 package impl;
 
+import impl.fields.OptionalCost;
 import impl.fields.Sex;
 
 import java.time.Duration;
@@ -42,6 +43,8 @@ public class InputManager {
             return (T) inputDuration(inputDescription, inline);
         } else if (type.equals(Sex.class)) {
             return (T) Sex.sexInput(inputDescription, inline);
+        } else if (type.equals(OptionalCost.class)) {
+            return (T) OptionalCost.optionalCostInput(inputDescription, inline);
         } else {
             throw new IllegalArgumentException("ALERT: Unexpected input type: " + type);
         }
@@ -116,7 +119,7 @@ public class InputManager {
             return null; // CHECK FOR NULL-OBJECT!
     }
 
-    static Integer inputInteger(String inputDescription, boolean inline) {
+    public static Integer inputInteger(String inputDescription, boolean inline) {
         boolean validInput;
         Integer inputNumber = 0; // Just to shut the compiler up, this variable WILL be initialized once we return
         do {

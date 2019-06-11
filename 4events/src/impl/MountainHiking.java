@@ -1,7 +1,6 @@
 package impl;
 
 import impl.fields.OptionalCost;
-import impl.fields.Sex;
 import interfaces.LegalObject;
 import interfaces.ReflectionInterface;
 
@@ -10,13 +9,15 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
-public class SoccerGame extends Event implements LegalObject, ReflectionInterface {
-    public Sex      gender;
-    public Integer  ageMin;
-    public Integer  ageMax;
+public class MountainHiking extends Event implements LegalObject, ReflectionInterface {
+    public Integer  length;
+    public Integer  heightDiff;
+    public OptionalCost coach;
+    public OptionalCost lodge;
+    public OptionalCost lunch;
 
-    private static final String eventType = "soccer_game";
-    private final String[] mandatoryFields = {"gender", "ageMin", "ageMax"};
+    private static final String eventType = "mountain_hiking";
+    private final String[] mandatoryFields = {"length", "heightDiff"};
 
     static String getClassEventType() { return eventType; } // Static method to know how all the events of this type are saved in the DB
 
@@ -26,9 +27,9 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      *
      * Here be dragons
      */
-    SoccerGame() { }
+    MountainHiking() { }
 
-    SoccerGame(UUID eventID, UUID creatorID){
+    MountainHiking(UUID eventID, UUID creatorID){
         super(eventID, creatorID, eventType);
     }
 
@@ -49,30 +50,22 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
 
     // TODO method description
     LinkedHashMap<String, OptionalCost> getOptionalCosts() {
-        return null;
+        LinkedHashMap<String, OptionalCost> costsMap = new LinkedHashMap<>();
+        if (coach != null) costsMap.put("coach", this.coach);
+        if (lodge != null) costsMap.put("lodge", this.lodge);
+        if (lunch != null) costsMap.put("lunch", this.lunch);
+        if (costsMap.size() == 0) return null;
+        return costsMap;
     }
 
     // TODO method description
     LinkedHashMap<UUID, Integer> getOptionalCostsByUUID() {
-        return null;
-    }
-
-    /**
-     * A method to save an UserID into the Event object to keep track of registered users
-     * @param user A User object from which the UserID will be taken
-     * @return True if registration was successful
-     * @throws IllegalStateException If the event has already reached maximum number of registered users
-     * @throws IllegalArgumentException If anything goes wrong while registering the user (error in Exception message)
-     *                                  i.e User is already registered or User's Sex is not appropriate for this event
-     */
-    public boolean register(User user) throws IllegalArgumentException, IllegalStateException {
-        int age = user.getAge();
-        if (!user.getGender().equals(this.gender)) {
-            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " sex is not allowed to subscribe to this event");
-        } else if ((age != 0 && age < ageMin) || (age != 0 && user.getAge() > ageMax)) {
-            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " age is not allowed to subscribe to this event");
-        }
-        return super.register(user.getUserID());
+        LinkedHashMap<UUID, Integer> costsMap = new LinkedHashMap<>();
+        if (coach != null) costsMap.put(this.coach.getCostID(), this.coach.getCostAmount());
+        if (lodge != null) costsMap.put(this.lodge.getCostID(), this.lodge.getCostAmount());
+        if (lunch != null) costsMap.put(this.lunch.getCostID(), this.lunch.getCostAmount());
+        if (costsMap.size() == 0) return null;
+        return costsMap;
     }
 
     /**
@@ -94,7 +87,10 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      */
     public boolean isLegal(LocalDateTime currentDate) throws IllegalStateException {
         super.isLegal(currentDate);
-        if (ageMax < ageMin) throw new IllegalStateException ("ALERT: min age higher than max age");
+        if (length < 0) throw new IllegalStateException("ALERT: negative path length");
+        if (coach != null && coach.getCostAmount() < 0) throw new IllegalStateException("ALERT: negative coach cost");
+        if (lodge != null && lodge.getCostAmount() < 0) throw new IllegalStateException("ALERT: negative lodge cost");
+        if (lunch != null && lunch.getCostAmount() < 0) throw new IllegalStateException("ALERT: negative lunch cost");
         return true;
     }
 
@@ -102,9 +98,11 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     public String toString () {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString());
-        sb.append("Sex: ").append(gender == null ? "null" : gender.toString()).append("\n"); // If gender hasn't been set this avoids NullPointerExceptions
-        sb.append("Age Min: ").append(ageMin).append("\n");
-        sb.append("Age Max: ").append(ageMax).append("\n");
+        sb.append("Length: ").append(length).append("\n");
+        sb.append("Height difference: ").append(heightDiff).append("\n");
+        if (coach != null) sb.append("OptCost1 - Coach amount: ").append(coach.getCostAmount()).append("\n");
+        if (lodge != null) sb.append("OptCost2 - Lodge amount: ").append(lodge.getCostAmount()).append("\n");
+        if (lunch != null) sb.append("OptCost3 - Lunch amount: ").append(lunch.getCostAmount()).append("\n");
         return sb.toString();
     }
 }

@@ -48,7 +48,7 @@
     "descr" : "Data ultima per annullare l'iscrizione all'evento"
   },
   "cost" : {
-    "name"  : "Costo",
+    "name"  : "Costo (€)",
     "descr" : "Quota individuale d'iscrizione"
   },
   "inQuota" : {
@@ -74,6 +74,26 @@
   "ageMax" : {
     "name"  : "Età massima",
     "descr" : "Soglia massima d'età per partecipare"
+  },
+  "length" : {
+    "name"  : "Lunghezza (km)",
+    "descr" : "Lunghezza del percorso (in km)"
+  },
+  "heightDiff" : {
+    "name"  : "Dislivello (m)",
+    "descr" : "Dislivello totale, somma di salita e discesa (in m)"
+  },
+  "coach" : {
+    "name"  : "Autobus",
+    "descr" : "Viaggio in autobus fino alla destinazione"
+  },
+  "lodge" : {
+    "name"  : "Rifugio",
+    "descr" : "Soggiorno in rifugio"
+  },
+  "lunch" : {
+    "name"  : "Pranzo",
+    "descr" : "Pasto caldo in rifugio"
   },
   "UNKNOWN" : "Sconosciuto",
   "VALID"   : "Valido",
