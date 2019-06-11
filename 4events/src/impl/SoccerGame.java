@@ -47,12 +47,18 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
         }
     }
 
-    // TODO method description
+    /**
+     * Gets the available OptionalCosts for this event, which are none, so returns null
+     * @return null
+     */
     LinkedHashMap<String, OptionalCost> getOptionalCosts() {
         return null;
     }
 
-    // TODO method description
+    /**
+     * Gets the available OptionalCosts for this event, which are none, so returns null
+     * @return null
+     */
     LinkedHashMap<UUID, Integer> getOptionalCostsByUUID() {
         return null;
     }

@@ -84,10 +84,23 @@ abstract class Event implements LegalObject, ReflectionInterface {
 
     public Double getCost() { return cost; }
 
-    // TODO method description
+    /**
+     * Gets the available OptionalCosts for this event
+     * Should return null if the event has not OptionalCosts
+     * @return a LinkedHashMap with a String as a key and a OptionalCost as Value
+     *                          - Key is costs's name as a String (such as the one returned from getAttributesName)
+     *                            i.e. "lodge" for MountainHiking
+     *                          - Value is a OptionalField object
+     */
     abstract LinkedHashMap<String, OptionalCost> getOptionalCosts();
 
-    // TODO method description
+    /**
+     * Gets the available OptionalCosts for this event
+     * Should return null if the event has not OptionalCosts
+     * @return a LinkedHashMap with a String as a key and a OptionalCost as Value
+     *                          - Key is costs's UUID
+     *                          - Value is a OptionalField object
+     */
     abstract LinkedHashMap<UUID, Integer> getOptionalCostsByUUID();
 
     /**
@@ -100,6 +113,25 @@ abstract class Event implements LegalObject, ReflectionInterface {
             registeredUsersString.add(registeredUser.toString());
         }
         return registeredUsersString;
+    }
+
+    /**
+     * Calculate total cost given an ArrayList of optionalCosts
+     * @param wantedCosts ArrayList of UUID of OptionalCost objects
+     * @return A double with the sum of all costs
+     */
+    Double totalCost(ArrayList<UUID> wantedCosts) {
+        Double totalCost = this.cost;
+        LinkedHashMap<UUID, Integer> optionalCosts = this.getOptionalCostsByUUID();
+        if (optionalCosts == null) {
+            return totalCost;
+        }
+        for (UUID costID : wantedCosts) {
+            if (!optionalCosts.containsKey(costID))
+                throw new IllegalArgumentException("ALERT: Wanted cost " + costID + " is not present in event's available costs"); // This should never happen (TM)
+            totalCost += optionalCosts.get(costID);
+        }
+        return totalCost;
     }
 
     int registeredUsersCount() { return registeredUsers == null ? 0 : registeredUsers.size(); }

@@ -25,7 +25,7 @@ public class OptionalCost {
             if (userInput == null) {
                 return null;
             } else if (userInput == 'S') {
-                amount = InputManager.inputInteger("Cost (€)", true); // TODO This is now hardcoded, it should probably be moved somewhere else
+                amount = InputManager.inputInteger("Cost (€)", true);
             }
         } while (! (userInput == 'S' || userInput == 'N'));
         if (userInput == 'S') {
@@ -42,7 +42,7 @@ public class OptionalCost {
      */
     @Override
     public String toString() {
-        return costAmount.toString();
+        return costAmount.toString() + " €";
     }
 
     /*

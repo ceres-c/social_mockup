@@ -492,7 +492,15 @@ class Menu {
         return userInput == 'S';
     }
 
-    // TODO method description
+    /**
+     * Asks the user to choose which OptionalCosts he's interested into
+     * @param allCostsMap a LinkedHashMap with a String as a key and a OptionalCost as Value
+     *                      - Key is costs's name as a String (such as the one returned from getAttributesName)
+     *                        i.e. "lodge" for MountainHiking
+     *                      - Value is a OptionalField object
+     * @return a LinkedHashMap such as allCostsMap, but with only the wanted optional costs, so it's a subset of
+     *         the original maps
+     */
     LinkedHashMap<String, OptionalCost> wantedOptionalCosts(LinkedHashMap<String, OptionalCost> allCostsMap) {
         if (allCostsMap == null) return null;
         Character userInput = null;

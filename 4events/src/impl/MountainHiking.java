@@ -48,7 +48,13 @@ public class MountainHiking extends Event implements LegalObject, ReflectionInte
         }
     }
 
-    // TODO method description
+    /**
+     * Gets the available OptionalCosts for this event
+     * @return a LinkedHashMap with a String as a key and a OptionalCost as Value
+     *                          - Key is costs's name as a String (such as the one returned from getAttributesName)
+     *                            i.e. "lodge" for MountainHiking
+     *                          - Value is a OptionalField object
+     */
     LinkedHashMap<String, OptionalCost> getOptionalCosts() {
         LinkedHashMap<String, OptionalCost> costsMap = new LinkedHashMap<>();
         if (coach != null) costsMap.put("coach", this.coach);
@@ -58,7 +64,12 @@ public class MountainHiking extends Event implements LegalObject, ReflectionInte
         return costsMap;
     }
 
-    // TODO method description
+    /**
+     * Gets the available OptionalCosts for this event
+     * @return a LinkedHashMap with a String as a key and a OptionalCost as Value
+     *                          - Key is costs's UUID
+     *                          - Value is a OptionalField object
+     */
     LinkedHashMap<UUID, Integer> getOptionalCostsByUUID() {
         LinkedHashMap<UUID, Integer> costsMap = new LinkedHashMap<>();
         if (coach != null) costsMap.put(this.coach.getCostID(), this.coach.getCostAmount());

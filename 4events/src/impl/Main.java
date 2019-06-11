@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 
-// TODO se l'utente si derigistra, bisogna togliere le voci di spesa
 public class Main {
     public enum Command {
         INVALID,
@@ -200,14 +199,14 @@ public class Main {
                                     double eventCost;
                                     if (! registeredUsers.contains(existingEvent.getCreatorID())) {
                                         ArrayList<UUID> creatorCosts = myConnector.getOptionalCosts(existingEvent.getCreatorID(), existingEvent.getEventID());
-                                        eventCost = calculateTotalCost(existingEvent, creatorCosts);
+                                        eventCost = existingEvent.totalCost(creatorCosts);
                                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
                                         Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, existingEvent.getCreatorID(), myConnector.getUsername(existingEvent.getCreatorID()), eventCost);
                                         myConnector.insertNotification(newNotification);
                                     }
                                     for (UUID recipientID : registeredUsers) {
                                         ArrayList<UUID> userCosts = myConnector.getOptionalCosts(recipientID, existingEvent.getEventID());
-                                        eventCost = calculateTotalCost(existingEvent, userCosts);
+                                        eventCost = existingEvent.totalCost(userCosts);
                                         Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID), eventCost);
                                         myConnector.insertNotification(newNotification);
                                     }
@@ -373,13 +372,13 @@ public class Main {
                     if (! registeredUsers.contains(event.getCreatorID())) {
                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
                         ArrayList<UUID> creatorCosts = dbConnection.getOptionalCosts(event.getCreatorID(), event.getEventID());
-                        eventCost = calculateTotalCost(event, creatorCosts);
+                        eventCost = event.totalCost(creatorCosts);
                         Notification newNotification = Notification.closedEventNotification(event, eventTranslation, event.getCreatorID(), dbConnection.getUsername(event.getCreatorID()), eventCost);
                         dbConnection.insertNotification(newNotification);
                     }
                     for (UUID recipientID : registeredUsers) {
                         ArrayList<UUID> userCosts = dbConnection.getOptionalCosts(recipientID, event.getEventID());
-                        eventCost = calculateTotalCost(event, userCosts);
+                        eventCost = event.totalCost(userCosts);
                         Notification newNotification = Notification.closedEventNotification(event, eventTranslation, recipientID, dbConnection.getUsername(recipientID), eventCost);
                         dbConnection.insertNotification(newNotification);
                     }
@@ -398,21 +397,6 @@ public class Main {
                 dbConnection.updateEventState(event);
             }
         }
-    }
-
-    // TODO method description
-    static private Double calculateTotalCost (Event event, ArrayList<UUID> wantedCosts) {
-        Double totalCost = event.getCost();
-        LinkedHashMap<UUID, Integer> optionalCosts = event.getOptionalCostsByUUID();
-        if (optionalCosts == null) {
-            return totalCost;
-        }
-        for (UUID costID : wantedCosts) {
-            if (!optionalCosts.containsKey(costID))
-                throw new IllegalArgumentException("ALERT: Wanted cost " + costID + " is not present in event's available costs"); // This should never happen (TM)
-            totalCost += optionalCosts.get(costID);
-        }
-        return totalCost;
     }
 
     /**

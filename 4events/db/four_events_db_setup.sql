@@ -107,8 +107,7 @@ CREATE TABLE public.eventNotifications (
 CREATE TABLE public.optionalCost (
     costID character(36) NOT NULL,
     eventID character(36) NOT NULL,
-    userID character(36) NOT NULL,
-    CONSTRAINT optionalCost_pkey PRIMARY KEY (costID)
+    userID character(36) NOT NULL
 );
 
 --

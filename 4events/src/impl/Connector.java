@@ -542,8 +542,19 @@ class Connector {
         return returnEvents;
     }
 
-    // TODO method description
-    void insertOptionalCosts(LinkedHashMap<String, OptionalCost> optionalCosts, UUID eventID, UUID userID) throws IllegalStateException, NoSuchElementException, SQLException {
+    /**
+     * Inserts an OptionalCost into the database in the optionalCost table given OptionalCost object and
+     * relative event and user IDs
+     * @param optionalCosts a LinkedHashMap with a String as a key and a OptionalCost as Value
+     *                          - Key is costs's name as a String (such as the one returned from getAttributesName)
+     *                            i.e. "lodge" for MountainHiking
+     *                          - Value is a OptionalField object
+     * @param eventID UUID of the event this cost is linked to
+     * @param userID UUID of the user this cost is linked to
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs
+     */
+    void insertOptionalCosts(LinkedHashMap<String, OptionalCost> optionalCosts, UUID eventID, UUID userID) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
         if (optionalCosts == null) return;
 
@@ -563,7 +574,14 @@ class Connector {
         }
     }
 
-    // TODO method description
+    /**
+     * Gets all the OptionalCosts a user has chosen
+     * @param userID UUID of the user to search costs for
+     * @param eventID  UUID of the event to search costs for
+     * @return ArrayList of UUID objects with UUID of OptionalCosts
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException If a database access error occurs
+     */
     ArrayList<UUID> getOptionalCosts(UUID userID, UUID eventID) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
