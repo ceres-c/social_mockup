@@ -444,7 +444,7 @@ public class Main {
          * @param jsonPath Path to the json file to load
          */
         jsonTranslator (String jsonPath) {
-            InputStream inputStream = getClass().getResourceAsStream(jsonPath); // Tries to open the json as a resource
+            InputStream inputStream = getClass().getResourceAsStream("/" + jsonPath); // Tries to open the json as a resource
             if (inputStream == null) // If getResourceAsStream returns null, we're not running in a jar
                 try {
                     inputStream = new FileInputStream(jsonPath); // Then we need to read the file from disk
