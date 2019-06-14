@@ -59,10 +59,10 @@ abstract class Event implements LegalObject, ReflectionInterface {
      */
     Event() { }
 
-    Event(UUID eventID, UUID creatorID, String catDb) {
+    Event(UUID eventID, UUID creatorID, String eventType) {
         this.eventID = eventID;
         this.creatorID = creatorID;
-        this.eventType = catDb;
+        this.eventType = eventType;
         this.published = false;
         this.currentState = State.UNKNOWN;
         this.registeredUsers = new ArrayList<>();
@@ -199,11 +199,11 @@ abstract class Event implements LegalObject, ReflectionInterface {
     String getCurrentStateAsString() { return this.currentState.name(); }
 
     /**
-     *
+     * // TODO method description
      */
     void setEventWithdrawn () {
         this.currentState = State.WITHDRAWN;
-    }
+    } // TODO se lo stato non è OPEN, throw exception
 
     /**
      * Setter that has to be used ONLY to restore an event from the database. For normal operation use updateState.

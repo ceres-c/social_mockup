@@ -22,7 +22,7 @@ class Connector {
     private final static String GET_OPEN_EVENTS_LIST = "SELECT eventID FROM public.default_event WHERE published = true AND currentstate = 'OPEN'";
     private final static String GET_EVENTS_LIST_BY_CREATORID = "SELECT eventID FROM public.default_event WHERE creatorID = ?";
     private final static String GET_EVENTS_LIST_BY_REGISTERED = "SELECT eventID FROM public.default_event WHERE ? = ANY (public.default_event.registeredUsers)";
-    private final static String GET_EVENT = "SELECT * FROM public.%s WHERE eventID LIKE ?"; // HACK explained in function body
+    private final static String GET_EVENT = "SELECT * FROM public.%s WHERE eventID = ?"; // HACK explained in function body
     private final static String UPDATE_EVENT_STATE = "UPDATE public.default_event SET currentstate = ? WHERE eventID = ?";
     private final static String UPDATE_EVENT_PUBLISHED = "UPDATE public.default_event SET published = ? WHERE eventID = ?";
     private final static String UPDATE_EVENT_REGISTERED = "UPDATE public.default_event SET registeredUsers = ? WHERE eventID = ?";
@@ -139,6 +139,7 @@ class Connector {
             throw new SQLException("ALERT: Error adding user to the database!\nSQL INSERT query returned " + i);
     }
 
+    // TODO method description
     boolean updateUser(User user) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
