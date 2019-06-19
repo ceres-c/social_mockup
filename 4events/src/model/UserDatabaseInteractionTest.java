@@ -10,15 +10,14 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import static menu.Menu.SHA512PasswordHash;
-import static menu.Menu.charArrayToByteArray;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UserDatabaseInteractionTest {
     private final String username = "user001";
     private final char[] password = {'i', 'l', 'o', 'v', 'e', 'y', 'o', 'u'}; // rockyou.txt docet
-    byte[] salt = charArrayToByteArray(username.toCharArray());
-    String hashedPassword = SHA512PasswordHash(password, salt);
+    CryptoHelper crypto = new CryptoHelper();
+    byte[] salt = crypto.charArrayToByteArray(username.toCharArray());
+    String hashedPassword = crypto.SHA512PasswordHash(password, salt);
     private final Sex gender = new Sex("M");
     private final Integer age = 25;
     private UserTest user1 = new UserTest(username, hashedPassword, gender, age, null); // favooriteCategories not specified

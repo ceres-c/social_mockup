@@ -1,6 +1,6 @@
 package menu.commands;
 
-public enum Command {
+public enum MainCommand {
     INVALID,
     DASHBOARD,
     PUBLIC_EVENTS_LIST,

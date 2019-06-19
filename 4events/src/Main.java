@@ -1,8 +1,9 @@
 import DMO.Connector;
 import DMO.JsonConfigReader;
 import DMO.JsonTranslator;
-import menu.Menu;
-import menu.commands.Command;
+import controller.LoginSignupController;
+import menu.*;
+import menu.commands.MainCommand;
 import menu.commands.DashboardCommand;
 import model.*;
 
@@ -17,7 +18,9 @@ public class Main {
     private static final String CONFIG_JSON_PATH = "config.json";
 
     public static void main(String[] args) {
-        Connector myConnector = null; // Declared null to shut the compiler up, on usage it will always be properly instanced
+        Connector dbConnection = null; // Declared null to shut the compiler up, on usage it will always be properly instanced
+
+        CryptoHelper crypto = new CryptoHelper();
 
         Path configJsonPath = Paths.get(CONFIG_JSON_PATH);
         JsonConfigReader config = new JsonConfigReader(configJsonPath.toString());
@@ -32,28 +35,54 @@ public class Main {
         User currentUser;
 
         try {
-            myConnector = new Connector(config.getDBURL(), config.getDBUser(), config.getDBPassword());
+            dbConnection = new Connector(config.getDBURL(), config.getDBUser(), config.getDBPassword());
         } catch (SQLException e) {
-            System.out.println("ALERT: Error establishing a database connection!");
+            System.out.println(menuTranslation.getTranslation("SQLError"));
             e.printStackTrace();
             System.exit(1);
         }
 
-        try {
-            updateAllEvents(myConnector, eventTranslation, currentDateTime);
+        try { // TODO muovere altrove
+            updateAllEvents(dbConnection, eventTranslation, currentDateTime);
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
         }
 
-        Menu menu = Menu.getInstance(myConnector, menuTranslation);
-        menu.printWelcome();
+        Menu menu = Menu.getInstance(dbConnection, menuTranslation); // TODO remove this
 
-        while ((currentUser = menu.loginOrSignup()) == null);
+        System.out.println(menuTranslation.getTranslation("welcome"));
 
-        Command userSelection = Command.INVALID;
+        // Login handling begins here
+        LoginSignupController loginSignupController = new LoginSignupController(menuTranslation, dbConnection);
+        LoginSignupView loginSignupView = new LoginSignupView(menuTranslation);
+        loginSignupView.print();
+        Integer userInput = loginSignupView.parseInput();
+        if (userInput == 1) {
+            // Login
+            LoginView login = new LoginView(menuTranslation, crypto);
+            login.print();
+            currentUser = loginSignupController.login(login.parseInput());
+        } else {
+            // Sign Up
+            SignUpView signUp = new SignUpView(menuTranslation, eventTranslation, dbConnection, crypto);
+            signUp.print();
+            currentUser = loginSignupController.signup(signUp.parseInput());
+            // Sign Up
+        }
+        // End of login return
+
+        MainMenuView menuView = new MainMenuView(menuTranslation, dbConnection, currentUser);
+
+        menuView.print();
+
+        MainCommand userSelection = MainCommand.INVALID;
 
         while (true) {
+            userSelection = menuView.parseInput();
+            System.out.println(userSelection);
+
+            /*
             userSelection = menu.displayMainMenu(currentUser);
             switch (userSelection) {
                 case INVALID:
@@ -65,7 +94,7 @@ public class Main {
                             User newUser = menu.displayAndEditUserProfile(currentUser);
                             if (!newUser.equals(currentUser)) { // User made some changes to its profile
                                 try {
-                                    myConnector.updateUser(newUser); // Then Update the database
+                                    dbConnection.updateUser(newUser); // Then Update the database
                                 } catch (SQLException e) {
                                     e.printStackTrace();
                                     System.exit(1);
@@ -80,7 +109,7 @@ public class Main {
                             Event existingEvent = menu.displayAndSelectCreatedEvents(currentUser);
                             if (existingEvent != null) {
                                 // User want to publish an event which wasn't published before
-                                System.out.println(existingEvent.detailedDescription(eventTranslation, myConnector));
+                                System.out.println(existingEvent.detailedDescription(eventTranslation, dbConnection));
 
                                 if (menu.publishEvent()) {
                                     // The user wants to publish the event
@@ -88,8 +117,8 @@ public class Main {
                                         existingEvent.publish(currentDateTime);
                                         existingEvent.updateState(currentDateTime); // VALID -> OPEN
                                         try {
-                                            myConnector.updateEventState(existingEvent);
-                                            myConnector.updateEventPublished(existingEvent);
+                                            dbConnection.updateEventState(existingEvent);
+                                            dbConnection.updateEventPublished(existingEvent);
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                             System.exit(1);
@@ -102,7 +131,7 @@ public class Main {
                                     // The user wants to withdraw the event
                                     existingEvent.setEventWithdrawn();
                                     try {
-                                        myConnector.updateEventState(existingEvent);
+                                        dbConnection.updateEventState(existingEvent);
                                     } catch (SQLException e) {
                                         e.printStackTrace();
                                         System.exit(1);
@@ -112,8 +141,8 @@ public class Main {
                                     ArrayList<UUID> registeredUsers = existingEvent.getRegisteredUsers();
                                     for (UUID recipientID : registeredUsers) {
                                         try {
-                                            Notification newNotification = Notification.withdrawnEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID));
-                                            myConnector.insertNotification(newNotification);
+                                            Notification newNotification = Notification.withdrawnEventNotification(existingEvent, eventTranslation, recipientID, dbConnection.getUsername(recipientID));
+                                            dbConnection.insertNotification(newNotification);
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                             System.exit(1);
@@ -136,7 +165,7 @@ public class Main {
 
                     if (existingEvent != null) {
                         // Means the user has selected an event from the list
-                        System.out.println(existingEvent.detailedDescription(eventTranslation, myConnector));
+                        System.out.println(existingEvent.detailedDescription(eventTranslation, dbConnection));
 
                         if (menu.registerEvent()) {
                             // The user wants to register
@@ -157,10 +186,10 @@ public class Main {
 
                             if (canRegister) {
                                 try {
-                                    myConnector.insertOptionalCosts(menu.wantedOptionalCosts(existingEvent.getOptionalCosts()), existingEvent.getEventID(), currentUser.getUserID());
+                                    dbConnection.insertOptionalCosts(menu.wantedOptionalCosts(existingEvent.getOptionalCosts()), existingEvent.getEventID(), currentUser.getUserID());
                                     // If this kind of event has optional costs it prompts the user to choose which one he wants
                                     // and saves them in the database
-                                    myConnector.updateEventRegistrations(existingEvent);
+                                    dbConnection.updateEventRegistrations(existingEvent);
                                 } catch (SQLException e) {
                                     e.printStackTrace();
                                     System.exit(1);
@@ -170,7 +199,7 @@ public class Main {
                             if (existingEvent.updateState(currentDateTime)) {
                                 // This registration has brought the number of registered users to the wanted participants number
                                 try {
-                                    myConnector.updateEventState(existingEvent);
+                                    dbConnection.updateEventState(existingEvent);
                                 } catch (SQLException e) {
                                     e.printStackTrace();
                                     System.exit(1);
@@ -180,17 +209,17 @@ public class Main {
                                     ArrayList<UUID> registeredUsers = existingEvent.getRegisteredUsers();
                                     double eventCost;
                                     if (! registeredUsers.contains(existingEvent.getCreatorID())) {
-                                        ArrayList<UUID> creatorCosts = myConnector.getOptionalCosts(existingEvent.getCreatorID(), existingEvent.getEventID());
+                                        ArrayList<UUID> creatorCosts = dbConnection.getOptionalCosts(existingEvent.getCreatorID(), existingEvent.getEventID());
                                         eventCost = existingEvent.totalCost(creatorCosts);
                                         // Probably the creator could not join the even due to a sex mismatch, but it has to be informed as well
-                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, existingEvent.getCreatorID(), myConnector.getUsername(existingEvent.getCreatorID()), eventCost);
-                                        myConnector.insertNotification(newNotification);
+                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, existingEvent.getCreatorID(), dbConnection.getUsername(existingEvent.getCreatorID()), eventCost);
+                                        dbConnection.insertNotification(newNotification);
                                     }
                                     for (UUID recipientID : registeredUsers) {
-                                        ArrayList<UUID> userCosts = myConnector.getOptionalCosts(recipientID, existingEvent.getEventID());
+                                        ArrayList<UUID> userCosts = dbConnection.getOptionalCosts(recipientID, existingEvent.getEventID());
                                         eventCost = existingEvent.totalCost(userCosts);
-                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, recipientID, myConnector.getUsername(recipientID), eventCost);
-                                        myConnector.insertNotification(newNotification);
+                                        Notification newNotification = Notification.closedEventNotification(existingEvent, eventTranslation, recipientID, dbConnection.getUsername(recipientID), eventCost);
+                                        dbConnection.insertNotification(newNotification);
                                     }
                                 } catch (SQLException e) {
                                     e.printStackTrace();
@@ -219,7 +248,7 @@ public class Main {
 
                     newEvent.updateState(currentDateTime); // UNKNOWN -> VALID
                     try {
-                        myConnector.insertEvent(newEvent);
+                        dbConnection.insertEvent(newEvent);
                     } catch (SQLException e) {
                         e.printStackTrace();
                         System.exit(1);
@@ -241,10 +270,10 @@ public class Main {
 
                     if (canRegister) {
                         try {
-                            myConnector.insertOptionalCosts(menu.wantedOptionalCosts(newEvent.getOptionalCosts()), newEvent.getEventID(), currentUser.getUserID());
+                            dbConnection.insertOptionalCosts(menu.wantedOptionalCosts(newEvent.getOptionalCosts()), newEvent.getEventID(), currentUser.getUserID());
                             // If this kind of event has optional costs it prompts the user to choose which one he wants
                             // and saves them in the database
-                            myConnector.updateEventRegistrations(newEvent);
+                            dbConnection.updateEventRegistrations(newEvent);
                         } catch (SQLException e) {
                             e.printStackTrace();
                             System.exit(1);
@@ -257,8 +286,8 @@ public class Main {
                             newEvent.publish(currentDateTime);
                             newEvent.updateState(currentDateTime); // VALID -> OPEN
                             try {
-                                myConnector.updateEventState(newEvent);
-                                myConnector.updateEventPublished(newEvent);
+                                dbConnection.updateEventState(newEvent);
+                                dbConnection.updateEventPublished(newEvent);
                             } catch (SQLException e) {
                                 e.printStackTrace();
                                 System.exit(1);
@@ -269,10 +298,10 @@ public class Main {
                         }
 
                         try { // Fire off notifications to all interested users
-                            ArrayList<UUID> userIDs = myConnector.getUserIDsByFavoriteCategory(newEvent.getEventType());
+                            ArrayList<UUID> userIDs = dbConnection.getUserIDsByFavoriteCategory(newEvent.getEventType());
                             for (UUID userID : userIDs) {
-                                Notification newEventNotification = Notification.newEventFavoriteCategoryNotification(newEvent, eventTranslation, userID, myConnector.getUsername(userID));
-                                myConnector.insertNotification(newEventNotification);
+                                Notification newEventNotification = Notification.newEventFavoriteCategoryNotification(newEvent, eventTranslation, userID, dbConnection.getUsername(userID));
+                                dbConnection.insertNotification(newEventNotification);
                             }
                         } catch (SQLException e) {
                             e.printStackTrace();
@@ -284,10 +313,10 @@ public class Main {
                         if (menu.sendInvite()) {
                             // The user wants to send invites
                             try { // Fire off notifications to all previously registered users
-                                ArrayList<UUID> userIDs = myConnector.getUserIDByOldRegistrations(currentUser.getUserID(), newEvent.getEventType());
+                                ArrayList<UUID> userIDs = dbConnection.getUserIDByOldRegistrations(currentUser.getUserID(), newEvent.getEventType());
                                 for (UUID userID : userIDs) {
-                                    Notification newEventNotification = Notification.newInviteNotification(newEvent, eventTranslation, userID, myConnector.getUsername(userID), currentUser.getUsername());
-                                    myConnector.insertNotification(newEventNotification);
+                                    Notification newEventNotification = Notification.newInviteNotification(newEvent, eventTranslation, userID, dbConnection.getUsername(userID), currentUser.getUsername());
+                                    dbConnection.insertNotification(newEventNotification);
                                 }
                             } catch (SQLException e) {
                                 e.printStackTrace();
@@ -306,7 +335,7 @@ public class Main {
                     while ((currentUser = menu.loginOrSignup()) == null); // Simply refreshes currentUser object
                     break;
                 case QUIT:
-                    myConnector.closeDb();
+                    dbConnection.closeDb();
                     menu.printExit();
                     System.exit(0);
                 default:
@@ -315,11 +344,12 @@ public class Main {
 
             currentDateTime = LocalDateTime.now(); // Refresh current date to allow event deadlines occurring now
             try {
-                updateAllEvents(myConnector, eventTranslation, currentDateTime);
+                updateAllEvents(dbConnection, eventTranslation, currentDateTime);
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.exit(1);
             }
+            */
         }
     }
 

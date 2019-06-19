@@ -8,8 +8,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static menu.Menu.SHA512PasswordHash;
-import static menu.Menu.charArrayToByteArray;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SoccerGameTest {
@@ -37,8 +35,9 @@ class SoccerGameTest {
     void registerUser() {
         final String username = "user001";
         final char[] password = {'i', 'l', 'o', 'v', 'e', 'y', 'o', 'u'}; // rockyou.txt docet
-        byte[] salt = charArrayToByteArray(username.toCharArray());
-        String hashedPassword = SHA512PasswordHash(password, salt);
+        CryptoHelper crypto = new CryptoHelper();
+        byte[] salt = crypto.charArrayToByteArray(username.toCharArray());
+        String hashedPassword = crypto.SHA512PasswordHash(password, salt);
         final Sex gender = new Sex("M");
         final Integer age = 25;
         User user = new User(username, hashedPassword, gender, age, null); // favoriteCategories not specified

@@ -2,7 +2,7 @@ package menu;
 
 import DMO.Connector;
 import DMO.JsonTranslator;
-import menu.commands.Command;
+import menu.commands.MainCommand;
 import menu.commands.DashboardCommand;
 import model.*;
 import model.fields.*;
@@ -13,9 +13,6 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * Contains all the methods used to interact with the user
@@ -28,6 +25,7 @@ public class Menu {
 
     private Connector dbConnection;
     private JsonTranslator menuTranslation;
+    private CryptoHelper crypto;
 
     /**
      * Private constructor
@@ -37,6 +35,7 @@ public class Menu {
     private Menu (Connector dbConnection, JsonTranslator menuTranslation) {
         this.dbConnection = dbConnection;
         this.menuTranslation = menuTranslation;
+        this.crypto = new CryptoHelper();
     }
 
     public static Menu getInstance(Connector dbConnector, JsonTranslator menuTranslation)
@@ -45,10 +44,6 @@ public class Menu {
             singleInstance = new Menu(dbConnector, menuTranslation);
 
         return singleInstance;
-    }
-
-    public void printWelcome() {
-        System.out.println(menuTranslation.getTranslation("welcome"));
     }
 
     public void printExit() {
@@ -98,8 +93,8 @@ public class Menu {
         while ((username = InputManager.inputString("Username", true)) == null);
         while ((password = InputManager.inputPassword("Password")) == null);
 
-        byte[] salt = charArrayToByteArray(username.toCharArray());
-        String hashedPassword = SHA512PasswordHash(password, salt);
+        byte[] salt = crypto.charArrayToByteArray(username.toCharArray());
+        String hashedPassword = crypto.SHA512PasswordHash(password, salt);
         java.util.Arrays.fill(password, ' '); // It will still be somewhere in memory due to Java's Almighty Garbage Collector (TM), but at least we tried.
 
         User userFromDb;
@@ -123,8 +118,8 @@ public class Menu {
         Integer age;
         while ((username = InputManager.inputString("Username", true)) == null);
         while ((password = InputManager.inputPassword("Password")) == null);
-        byte[] salt = charArrayToByteArray(username.toCharArray());
-        String hashedPassword = SHA512PasswordHash(password, salt);
+        byte[] salt = crypto.charArrayToByteArray(username.toCharArray());
+        String hashedPassword = crypto.SHA512PasswordHash(password, salt);
         java.util.Arrays.fill(password, ' '); // It will still be somewhere in memory due to Java's Almighty Garbage Collector (TM), but at least we tried.
 
         while ((gender = Sex.sexInput(menuTranslation.getTranslation("genderInput"), true)) == null);
@@ -148,7 +143,7 @@ public class Menu {
     * @param user Current User object to fetch number of new notifications
     * @return A Main.Command enum type
     */
-    public Command displayMainMenu(User user) {
+    public MainCommand displayMainMenu(User user) {
         int unreadNotificationsNum;
         try {
             unreadNotificationsNum = dbConnection.getUnreadNotificationsCountByUser(user);
@@ -170,11 +165,11 @@ public class Menu {
 
         Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
 
-        Command[] commands = Command.values();
-        if (userSelection == null ||userSelection <= 0 || userSelection >= commands.length)
-            return Command.INVALID;
+        MainCommand[] mainCommands = MainCommand.values();
+        if (userSelection == null ||userSelection <= 0 || userSelection >= mainCommands.length)
+            return MainCommand.INVALID;
 
-        return commands[userSelection];
+        return mainCommands[userSelection];
     }
 
     /**
@@ -701,43 +696,5 @@ public class Menu {
         returnCatDescr.add(1, eventTranslation.getDescr(eventType));
 
         return returnCatDescr;
-    }
-
-    /**
-     * Hashes a password with SHA512 and given salt
-     * @param password A char array to hash
-     * @param salt A byte array to salt the password with
-     * @return A String result of salt + hashing operation
-     */
-    public static String SHA512PasswordHash(char[] password, byte[] salt) {
-        byte[] byteArrayPassword = charArrayToByteArray(password);
-        String generatedPassword = null; // Just to shut the compiler up, this variable WILL be initialized once we return
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-512");
-            md.update(salt);
-            byte[] bytes = md.digest(byteArrayPassword);
-            StringBuilder sb = new StringBuilder();
-            for(int i=0; i < bytes.length; i++)
-                sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
-            generatedPassword = sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("ALERT: Missing hashing algorithm SHA-512");
-            e.printStackTrace();
-        }
-        java.util.Arrays.fill(byteArrayPassword, (byte)0x00); // It will still be somewhere in memory due to Java's Almighty Garbage Collector (TM), but at least we tried.
-        return generatedPassword;
-    }
-
-    /**
-     * Converts a char array to byte array to be used with Java hashing methods
-     * @param charArray char array
-     * @return A byte array representing our chars
-     */
-    public static byte[] charArrayToByteArray(char[] charArray) {
-        byte[] byteArray = new byte[charArray.length];
-        for(int i= 0; i < charArray.length; i++) {
-            byteArray[i] = (byte)(0xFF & (int)charArray[i]);
-        }
-        return byteArray;
     }
 }

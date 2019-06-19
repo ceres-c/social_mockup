@@ -6,13 +6,8 @@ import model.fields.Sex;
 
 import java.util.*;
 
-public class User {
+public class User extends UserCore {
     private UUID userID;
-    private String username;
-    private String hashedPassword;
-    private Sex gender;
-    private Integer age; // age defaults to 0 if the user do not set this field
-    private String[] favoriteCategories; // Can be null
 
     /**
      * This should be used to create new users since it generates a random userID
@@ -22,12 +17,8 @@ public class User {
      * @param age User's age
      */
     public User(String username, String hashedPassword, Sex gender, Integer age, String[] favoriteCategories) {
-        this.username = username;
-        this.hashedPassword = hashedPassword;
+        super(username, hashedPassword, gender, age, favoriteCategories);
         this.userID = UUID.randomUUID();
-        this.gender = gender;
-        this.age = age;
-        this.favoriteCategories = favoriteCategories;
     }
 
     /**
@@ -39,12 +30,8 @@ public class User {
      * @param age User's age
      */
     public User(String username, String hashedPassword, UUID userID, Sex gender, Integer age, String[] favoriteCategories) {
-        this.username = username;
-        this.hashedPassword = hashedPassword;
+        super(username, hashedPassword, gender, age, favoriteCategories);
         this.userID = userID;
-        this.gender = gender;
-        this.age = age;
-        this.favoriteCategories = favoriteCategories;
     }
 
     public UUID getUserID() { return userID; }
@@ -103,5 +90,17 @@ public class User {
                 getGender().equals(user.getGender()) &&
                 Objects.equals(getAge(), user.getAge()) &&
                 Objects.equals(getFavoriteCategories(), user.getFavoriteCategories());
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "userID=" + userID +
+                ", username='" + username + '\'' +
+                ", hashedPassword='" + hashedPassword + '\'' +
+                ", gender=" + gender +
+                ", age=" + age +
+                ", favoriteCategories=" + Arrays.toString(favoriteCategories) +
+                '}';
     }
 }
