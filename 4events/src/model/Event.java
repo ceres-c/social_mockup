@@ -1,4 +1,4 @@
-package impl;
+package model;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -7,15 +7,15 @@ import java.time.Duration;
 import java.util.*;
 import java.time.LocalDateTime;
 
-import impl.fields.OptionalCost;
-import interfaces.LegalObject;
-import interfaces.ReflectionInterface;
+import DMO.Connector;
+import DMO.JsonTranslator;
+import model.fields.OptionalCost;
 
 /**
  * This abstract class represents generic events that will be inflected
  * into specific categories via extending classes
  */
-abstract class Event implements LegalObject, ReflectionInterface {
+public abstract class Event implements LegalObject, ReflectionInterface {
     public enum State {
         UNKNOWN,
         VALID,
@@ -57,9 +57,9 @@ abstract class Event implements LegalObject, ReflectionInterface {
      *
      * Here be dragons
      */
-    Event() { }
+    public Event() { }
 
-    Event(UUID eventID, UUID creatorID, String eventType) {
+    public Event(UUID eventID, UUID creatorID, String eventType) {
         this.eventID = eventID;
         this.creatorID = creatorID;
         this.eventType = eventType;
@@ -68,19 +68,19 @@ abstract class Event implements LegalObject, ReflectionInterface {
         this.registeredUsers = new ArrayList<>();
     }
 
-    UUID getEventID() { return eventID; }
+    public UUID getEventID() { return eventID; }
 
-    String getEventIDAsString() { return eventID.toString(); }
+    public String getEventIDAsString() { return eventID.toString(); }
 
     public UUID getCreatorID() { return creatorID; }
 
-    String getCreatorIDAsString() { return creatorID.toString(); }
+    public String getCreatorIDAsString() { return creatorID.toString(); }
 
-    String getEventType() { return eventType; }
+    public String getEventType() { return eventType; }
 
-    boolean isPublished () { return published; }
+    public boolean isPublished () { return published; }
 
-    ArrayList<UUID> getRegisteredUsers() { return registeredUsers; }
+    public ArrayList<UUID> getRegisteredUsers() { return registeredUsers; }
 
     public Double getCost() { return cost; }
 
@@ -92,7 +92,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      *                            i.e. "lodge" for MountainHiking
      *                          - Value is a OptionalField object
      */
-    abstract LinkedHashMap<String, OptionalCost> getOptionalCosts();
+    public abstract LinkedHashMap<String, OptionalCost> getOptionalCosts();
 
     /**
      * Gets the available OptionalCosts for this event
@@ -101,13 +101,13 @@ abstract class Event implements LegalObject, ReflectionInterface {
      *                          - Key is costs's UUID
      *                          - Value is a OptionalField object
      */
-    abstract LinkedHashMap<UUID, Integer> getOptionalCostsByUUID();
+    public abstract LinkedHashMap<UUID, Integer> getOptionalCostsByUUID();
 
     /**
      *
      * @return Returns an ArrayList with String representation of registered users' UUID
      */
-    ArrayList<String> getRegisteredUsersAsString() {
+    public ArrayList<String> getRegisteredUsersAsString() {
         ArrayList<String> registeredUsersString = new ArrayList<>();
         for(UUID registeredUser : registeredUsers){
             registeredUsersString.add(registeredUser.toString());
@@ -120,7 +120,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @param wantedCosts ArrayList of UUID of OptionalCost objects
      * @return A double with the sum of all costs
      */
-    Double totalCost(ArrayList<UUID> wantedCosts) {
+    public Double totalCost(ArrayList<UUID> wantedCosts) {
         Double totalCost = this.cost;
         LinkedHashMap<UUID, Integer> optionalCosts = this.getOptionalCostsByUUID();
         if (optionalCosts == null) {
@@ -134,9 +134,9 @@ abstract class Event implements LegalObject, ReflectionInterface {
         return totalCost;
     }
 
-    int registeredUsersCount() { return registeredUsers == null ? 0 : registeredUsers.size(); }
+    public int registeredUsersCount() { return registeredUsers == null ? 0 : registeredUsers.size(); }
 
-    boolean userIDAlreadyRegistered(UUID userID) { return registeredUsers != null && registeredUsers.contains(userID); }
+    public boolean userIDAlreadyRegistered(UUID userID) { return registeredUsers != null && registeredUsers.contains(userID); }
 
     /**
      * A method to save an UserID into the Event object to keep track of registered users
@@ -161,7 +161,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @param userID A UUID object
      * @return True if registration was successful
      */
-    boolean register(UUID userID) {
+    public boolean register(UUID userID) {
         if (this.userIDAlreadyRegistered(userID)) {
             throw new IllegalArgumentException("ALERT: User " + userID.toString() + " is already registered to this event");
         }
@@ -176,7 +176,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @throws IllegalStateException If User was not registered
      * @throws IllegalArgumentException If the event has reached minimum number of registered users (0)
      */
-    boolean deregister(User user, LocalDateTime currentDateTime) throws IllegalArgumentException, IllegalStateException {
+    public boolean deregister(User user, LocalDateTime currentDateTime) throws IllegalArgumentException, IllegalStateException {
         if (this.registeredUsersCount() == 0) {
             throw new IllegalStateException("ALERT: Event" + this.getEventID().toString() + " has already reached min number of users (0)");
         } else if (!this.userIDAlreadyRegistered(user.getUserID())) {
@@ -190,18 +190,18 @@ abstract class Event implements LegalObject, ReflectionInterface {
     /**
      * This method empties out registeredUsers array and has to be used only if the Event enters withdrawn state
      */
-    void deregisterAll() {
+    public void deregisterAll() {
         this.registeredUsers = new ArrayList<UUID>();
     }
 
-    State getCurrentState() { return currentState; }
+    public State getCurrentState() { return currentState; }
 
-    String getCurrentStateAsString() { return this.currentState.name(); }
+    public String getCurrentStateAsString() { return this.currentState.name(); }
 
     /**
      * // TODO method description
      */
-    void setEventWithdrawn () {
+    public void setEventWithdrawn () {
         this.currentState = State.WITHDRAWN;
     } // TODO se lo stato non è OPEN, throw exception
 
@@ -209,15 +209,15 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * Setter that has to be used ONLY to restore an event from the database. For normal operation use updateState.
      * @param state String version of a status from Event.State enum
      */
-    void setCurrentState (String state) { currentState = State.valueOf(state); }
+    public void setCurrentState (String state) { currentState = State.valueOf(state); }
 
-    static String getJsonPath() {
+    public static String getJsonPath() {
         return EVENT_JSON_PATH;
     }
 
-    int getParticipantsMax() { return participantsMax; }
+    public int getParticipantsMax() { return participantsMax; }
 
-    void setParticipantsMax(int participantsMax) { this.participantsMax = participantsMax; }
+    public void setParticipantsMax(int participantsMax) { this.participantsMax = participantsMax; }
 
     /**
      * A method to set an object as published.
@@ -225,7 +225,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @throws IllegalStateException If called on an event which is non-legal
      * @param currentDateTime
      */
-    void publish(LocalDateTime currentDateTime) throws IllegalStateException {
+    public void publish(LocalDateTime currentDateTime) throws IllegalStateException {
         if (!this.published && !isLegal(currentDateTime))
             throw new IllegalStateException("ALERT: Non legal events can't be published");
         this.published = true;
@@ -235,14 +235,14 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * Setter that has to be used ONLY to restore an event from the database. For normal operation use publish
      * @param state boolean of publication status
      */
-    void setPublished (boolean state) { this.published = state; }
+    public void setPublished (boolean state) { this.published = state; }
 
     /**
      * Control the "Status" state machine basing on current Status and date/time.
      * @param currentDateTime LocalDateTime object with the date to check against if status has to be updated or not
      * @return True if Event's status has changed and then the event has to be updated in the database as well
      */
-    boolean updateState(LocalDateTime currentDateTime) {
+    public boolean updateState(LocalDateTime currentDateTime) {
         switch (currentState) {
             case UNKNOWN:
                 if (this.isLegal(currentDateTime)) {
@@ -465,7 +465,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @param myConnector Connector object to query the database for creator's username
      * @return Short description string
      */
-    String synopsis (Main.jsonTranslator eventTranslation, Connector myConnector) {
+    public String synopsis (JsonTranslator eventTranslation, Connector myConnector) {
         StringBuilder sb = new StringBuilder();
         sb.append(eventTranslation.getName(this.getEventType())).append('\n');
         sb.append(eventTranslation.getName("title")).append(": ").append(this.title).append('\n');
@@ -487,7 +487,7 @@ abstract class Event implements LegalObject, ReflectionInterface {
      * @param myConnector Connector object to query the database for creator's username
      * @return Description string
      */
-    String detailedDescription (Main.jsonTranslator eventTranslation, Connector myConnector) {
+    public String detailedDescription (JsonTranslator eventTranslation, Connector myConnector) {
         StringBuilder sb = new StringBuilder();
         sb.append(eventTranslation.getName(this.getEventType())).append('\n');
         try {

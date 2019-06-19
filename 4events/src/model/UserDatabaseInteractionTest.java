@@ -1,16 +1,17 @@
-package impl;
+package model;
 
-import impl.fields.Sex;
+import DMO.Connector;
+import DMO.JsonConfigReader;
+import model.fields.Sex;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.UUID;
 
-import static impl.Menu.SHA512PasswordHash;
-import static impl.Menu.charArrayToByteArray;
+import static menu.Menu.SHA512PasswordHash;
+import static menu.Menu.charArrayToByteArray;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UserDatabaseInteractionTest {
@@ -24,7 +25,7 @@ class UserDatabaseInteractionTest {
 
     private static final String CONFIG_JSON_PATH = "config.json";
     Path configPath = Paths.get(CONFIG_JSON_PATH);
-    Main.jsonConfigReader config = new Main.jsonConfigReader(configPath.toString());
+    JsonConfigReader config = new JsonConfigReader(configPath.toString());
     Connector myConnector;
 
     UserDatabaseInteractionTest () {

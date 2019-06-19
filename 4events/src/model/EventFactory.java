@@ -1,11 +1,15 @@
-package impl;
+package model;
+
+import model.Event;
+import model.MountainHiking;
+import model.SoccerGame;
 
 import java.util.UUID;
 
 /**
- * A factory class to generate impl.Event subclasses
+ * A factory class to generate model.Event subclasses
  */
-class EventFactory {
+public class EventFactory {
     /**
      *
      * @param eventType A String referring to the first column in categories table of the DB
@@ -13,7 +17,7 @@ class EventFactory {
      * @return A Event Object of the right subclass with provided information in place
      * @throws IllegalArgumentException if given eventType isn't a known type
      */
-    Event createEvent (UUID eventID, UUID creatorID, String eventType) {
+    public Event createEvent (UUID eventID, UUID creatorID, String eventType) {
         Event returnEvent;
 
         // Iterate over different classes present in the DB
@@ -35,7 +39,7 @@ class EventFactory {
      * @param eventType A String referring to the first column in categories table of the DB
      * @return A Event Object of the right subclass with no data
      */
-    Event createEvent (String eventType) {
+    public Event createEvent (String eventType) {
         Event returnEvent;
 
         // Iterate over different classes present in the DB

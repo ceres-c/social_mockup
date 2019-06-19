@@ -1,6 +1,6 @@
-package impl.fields;
+package model.fields;
 
-import impl.InputManager;
+import menu.InputManager;
 
 public class Sex {
     private static final Character MALE = 'M';

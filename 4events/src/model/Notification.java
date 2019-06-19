@@ -1,5 +1,7 @@
-package impl;
+package model;
 
+
+import DMO.JsonTranslator;
 
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -87,7 +89,7 @@ public class Notification {
      * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    static Notification closedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername, double eventCost) {
+    public static Notification closedEventNotification(Event event, JsonTranslator eventTranslation, UUID recipientID, String recipientUsername, double eventCost) {
         StringBuilder sb = new StringBuilder();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm ");
 
@@ -117,7 +119,7 @@ public class Notification {
      * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    static Notification failedEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
+    public static Notification failedEventNotification(Event event, JsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
@@ -135,7 +137,7 @@ public class Notification {
      * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    static Notification withdrawnEventNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
+    public static Notification withdrawnEventNotification(Event event, JsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
@@ -153,7 +155,7 @@ public class Notification {
      * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    static Notification newEventFavoriteCategoryNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
+    public static Notification newEventFavoriteCategoryNotification(Event event, JsonTranslator eventTranslation, UUID recipientID, String recipientUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
@@ -172,7 +174,7 @@ public class Notification {
      * @param senderUsername String with username of the user which has created the event
      * @return Notification object with all the values instantiated
      */
-    static Notification newInviteNotification(Event event, Main.jsonTranslator eventTranslation, UUID recipientID, String recipientUsername, String senderUsername) {
+    public static Notification newInviteNotification(Event event, JsonTranslator eventTranslation, UUID recipientID, String recipientUsername, String senderUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;

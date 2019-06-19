@@ -1,7 +1,11 @@
-package impl;
+package DMO;
 
-import impl.fields.OptionalCost;
-import impl.fields.Sex;
+import model.EventFactory;
+import model.fields.OptionalCost;
+import model.fields.Sex;
+import model.Event;
+import model.Notification;
+import model.User;
 
 import java.sql.*;
 import java.time.Duration;
@@ -9,7 +13,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-class Connector {
+public class Connector {
     private final static String GET_USER = "SELECT * FROM public.users WHERE username = ?";
     private final static String INSERT_USER = "INSERT INTO public.users values (?, ?, ?, ?, ?, ?)";
     private final static String UPDATE_USER = "UPDATE public.users SET age = ?, favoriteCategories = ? WHERE userID = ?";
@@ -42,7 +46,7 @@ class Connector {
      * @param username String with database username
      * @param password String with database password
      */
-    Connector(String dbURL, String username, String password) throws SQLException {
+    public Connector(String dbURL, String username, String password) throws SQLException {
         try {
             Class.forName("org.postgresql.Driver"); // Ensures correct driver is loaded
         } catch (java.lang.ClassNotFoundException e) {
@@ -56,7 +60,7 @@ class Connector {
      * Closes a connection to the database
      * @throws IllegalStateException If no database is currently open
      */
-    void closeDb () throws IllegalStateException {
+    public void closeDb () throws IllegalStateException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
         try {
             dbConnection.close();
@@ -77,7 +81,7 @@ class Connector {
      * @throws IllegalArgumentException If username or password are wrong
      * @throws SQLException Directly from SQL driver if something else bad happens
      */
-    User getUser(String username, String hashedPassword) throws IllegalStateException, IllegalArgumentException, SQLException {
+    public User getUser(String username, String hashedPassword) throws IllegalStateException, IllegalArgumentException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
         String query = GET_USER;
 
@@ -112,7 +116,7 @@ class Connector {
      * @throws SQLException Directly from SQL driver if something else bad happens
      * @return True if insertion went right
      */
-    boolean insertUser (User user) throws IllegalStateException, IllegalArgumentException, SQLException {
+    public boolean insertUser (User user) throws IllegalStateException, IllegalArgumentException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
@@ -140,7 +144,7 @@ class Connector {
     }
 
     // TODO method description
-    boolean updateUser(User user) throws IllegalStateException, SQLException {
+    public boolean updateUser(User user) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
@@ -164,7 +168,7 @@ class Connector {
      * @throws IllegalArgumentException If username or password are wrong
      * @throws SQLException Directly from SQL driver if something else bad happens
      */
-    String getUsername(UUID userID) throws IllegalStateException, IllegalArgumentException, SQLException {
+    public String getUsername(UUID userID) throws IllegalStateException, IllegalArgumentException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         String username;
@@ -188,7 +192,7 @@ class Connector {
      * @throws IllegalArgumentException If nobody marked eventType as favorite category
      * @throws SQLException Directly from SQL driver if something else bad happens
      */
-    ArrayList<UUID> getUserIDsByFavoriteCategory (String eventType) throws IllegalStateException, NoSuchElementException, SQLException {
+    public ArrayList<UUID> getUserIDsByFavoriteCategory (String eventType) throws IllegalStateException, NoSuchElementException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<UUID> returnUserIDs = new ArrayList<>();
@@ -216,7 +220,7 @@ class Connector {
      * @throws IllegalArgumentException If nobody registered to events made by creatorID of type eventType
      * @throws SQLException Directly from SQL driver if something else bad happens
      */
-    ArrayList<UUID> getUserIDByOldRegistrations (UUID creatorID, String eventType) throws IllegalStateException, NoSuchElementException, SQLException {
+    public ArrayList<UUID> getUserIDByOldRegistrations (UUID creatorID, String eventType) throws IllegalStateException, NoSuchElementException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<UUID> duplicatedUUID = new ArrayList<>();
@@ -254,7 +258,7 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws NoSuchElementException If the database table public.categories is empty
      */
-    ArrayList<String> getCategories() throws IllegalStateException, NoSuchElementException {
+    public ArrayList<String> getCategories() throws IllegalStateException, NoSuchElementException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<String> returnCategories = new ArrayList<>();
@@ -285,7 +289,7 @@ class Connector {
      *                             by the setQueryTimeout method has been exceeded and has at least
      *                             attempted to cancel the currently running Statement
      */
-    boolean insertEvent (Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
+    public boolean insertEvent (Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int parametersNumber = 0;
@@ -378,7 +382,7 @@ class Connector {
      *                             by the setQueryTimeout method has been exceeded and has at least
      *                             attempted to cancel the currently running Statement
      */
-    boolean updateEventState(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
+    public boolean updateEventState(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
@@ -401,7 +405,7 @@ class Connector {
      *                             by the setQueryTimeout method has been exceeded and has at least
      *                             attempted to cancel the currently running Statement
      */
-    boolean updateEventPublished(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
+    public boolean updateEventPublished(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
@@ -424,7 +428,7 @@ class Connector {
      *                             by the setQueryTimeout method has been exceeded and has at least
      *                             attempted to cancel the currently running Statement
      */
-    boolean updateEventRegistrations(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
+    public boolean updateEventRegistrations(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
@@ -444,7 +448,7 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    ArrayList<Event> getActiveEvents() throws IllegalStateException, SQLException {
+    public ArrayList<Event> getActiveEvents() throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<Event> returnEvents = new ArrayList<>();
@@ -469,7 +473,7 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    ArrayList<Event> getOpenEvents() throws IllegalStateException, SQLException {
+    public ArrayList<Event> getOpenEvents() throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<Event> returnEvents = new ArrayList<>();
@@ -495,7 +499,7 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    ArrayList<Event> getEventsByCreator(User user) throws IllegalStateException, SQLException {
+    public ArrayList<Event> getEventsByCreator(User user) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<Event> returnEvents = new ArrayList<>();
@@ -523,7 +527,7 @@ class Connector {
      * @throws NoSuchElementException If the User hasn't registered to any event
      * @throws SQLException If a database access error occurs
      */
-    ArrayList<Event> getEventsByRegistration(User user) throws IllegalStateException, NoSuchElementException, SQLException {
+    public ArrayList<Event> getEventsByRegistration(User user) throws IllegalStateException, NoSuchElementException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<Event> returnEvents = new ArrayList<>();
@@ -555,7 +559,7 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    void insertOptionalCosts(LinkedHashMap<String, OptionalCost> optionalCosts, UUID eventID, UUID userID) throws IllegalStateException, SQLException {
+    public void insertOptionalCosts(LinkedHashMap<String, OptionalCost> optionalCosts, UUID eventID, UUID userID) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
         if (optionalCosts == null) return;
 
@@ -583,7 +587,7 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    ArrayList<UUID> getOptionalCosts(UUID userID, UUID eventID) throws IllegalStateException, SQLException {
+    public ArrayList<UUID> getOptionalCosts(UUID userID, UUID eventID) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<UUID> returnOptionalCosts = new ArrayList<>();
@@ -612,7 +616,7 @@ class Connector {
      * @throws SQLException Directly from SQL driver if something else bad happens
      * @return True if insertion went right
      */
-    boolean insertNotification(Notification notification) throws IllegalStateException, SQLException {
+    public boolean insertNotification(Notification notification) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
@@ -637,7 +641,7 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    ArrayList<Notification> getAllNotificationsByUser(User user) throws IllegalStateException, SQLException {
+    public ArrayList<Notification> getAllNotificationsByUser(User user) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<Notification> returnNotifications = new ArrayList<>();
@@ -665,7 +669,7 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    int getUnreadNotificationsCountByUser(User user) throws IllegalStateException, SQLException {
+    public int getUnreadNotificationsCountByUser(User user) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int count = 0;
@@ -686,7 +690,7 @@ class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException Directly from SQL driver if something else bad happens
      */
-    boolean updateNotificationRead(Notification notification) throws IllegalStateException, SQLException {
+    public boolean updateNotificationRead(Notification notification) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;

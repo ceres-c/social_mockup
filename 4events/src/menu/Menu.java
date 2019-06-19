@@ -1,7 +1,11 @@
-package impl;
+package menu;
 
-import impl.fields.OptionalCost;
-import impl.fields.Sex;
+import DMO.Connector;
+import DMO.JsonTranslator;
+import menu.commands.Command;
+import menu.commands.DashboardCommand;
+import model.*;
+import model.fields.*;
 
 import java.nio.file.Paths;
 import java.nio.file.Path;
@@ -17,25 +21,25 @@ import java.security.NoSuchAlgorithmException;
  * Contains all the methods used to interact with the user
  * Singleton
  */
-class Menu {
+public class Menu {
     private static Menu singleInstance = null;
 
-    static final String MENU_JSON_PATH = "res/IT_MenuDescr.json";
+    public static final String MENU_JSON_PATH = "res/IT_MenuDescr.json";
 
     private Connector dbConnection;
-    private Main.jsonTranslator menuTranslation;
+    private JsonTranslator menuTranslation;
 
     /**
      * Private constructor
      * @param dbConnection a Connector object already connected to the local database
      * @param menuTranslation a jsonTranslator object instantiated with menu json
      */
-    private Menu (Connector dbConnection, Main.jsonTranslator menuTranslation) {
+    private Menu (Connector dbConnection, JsonTranslator menuTranslation) {
         this.dbConnection = dbConnection;
         this.menuTranslation = menuTranslation;
     }
 
-    static Menu getInstance(Connector dbConnector, Main.jsonTranslator menuTranslation)
+    public static Menu getInstance(Connector dbConnector, JsonTranslator menuTranslation)
     {
         if (singleInstance == null)
             singleInstance = new Menu(dbConnector, menuTranslation);
@@ -43,11 +47,11 @@ class Menu {
         return singleInstance;
     }
 
-    void printWelcome() {
+    public void printWelcome() {
         System.out.println(menuTranslation.getTranslation("welcome"));
     }
 
-    void printExit() {
+    public void printExit() {
         System.out.println(menuTranslation.getTranslation("exit"));
     }
 
@@ -55,7 +59,7 @@ class Menu {
      * Prompts the user to choose between login and signup
      * @return User object once login or signup have been completed
      */
-    User loginOrSignup() {
+    public User loginOrSignup() {
         Integer userInput = 0;
         User returnUser = null;
         while (userInput != 1 && userInput != 2) {
@@ -144,7 +148,7 @@ class Menu {
     * @param user Current User object to fetch number of new notifications
     * @return A Main.Command enum type
     */
-    Main.Command displayMainMenu(User user) {
+    public Command displayMainMenu(User user) {
         int unreadNotificationsNum;
         try {
             unreadNotificationsNum = dbConnection.getUnreadNotificationsCountByUser(user);
@@ -166,9 +170,9 @@ class Menu {
 
         Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
 
-        Main.Command[] commands = Main.Command.values();
+        Command[] commands = Command.values();
         if (userSelection == null ||userSelection <= 0 || userSelection >= commands.length)
-            return Main.Command.INVALID;
+            return Command.INVALID;
 
         return commands[userSelection];
     }
@@ -176,7 +180,7 @@ class Menu {
     /**
      * Prints out all the available categories and their respective fields with a brief description
      */
-    void displayHelp() {
+    public void displayHelp() {
         System.out.println(menuTranslation.getTranslation("categoryList"));
 
         ArrayList<String> categories = dbConnection.getCategories();
@@ -200,9 +204,9 @@ class Menu {
      * No checks are made to ensure the user is allowed to register to selected event (i.e.: female users can select events for males).
      * @return Event object of the selected event, null if user aborted selection.
      */
-    Event chooseEventFromPublicList() {
+    public Event chooseEventFromPublicList() {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
-        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+        JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
 
         ArrayList<Event> eventsInDB = null;
         try {
@@ -232,7 +236,7 @@ class Menu {
      * Prompts the user to choose among available options in his dashboard
      * @return User choice
      */
-    Main.DashboardCommand displayDashboard() {
+    public DashboardCommand displayDashboard() {
         StringBuilder sb = new StringBuilder();
         sb.append(menuTranslation.getTranslation("welcomeDashboard")).append('\n');
         sb.append("1) ").append(menuTranslation.getTranslation("showUserProfile")).append('\n');
@@ -243,9 +247,9 @@ class Menu {
 
 
         Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
-        Main.DashboardCommand[] dashCommands = Main.DashboardCommand.values();
+        DashboardCommand[] dashCommands = DashboardCommand.values();
         if (userSelection == null || userSelection < 0 || userSelection >= dashCommands.length)
-            return Main.DashboardCommand.INVALID;
+            return DashboardCommand.INVALID;
 
         return dashCommands[userSelection];
     }
@@ -257,7 +261,7 @@ class Menu {
      *         UUID, username, password and Sex are retained.
      *         To know if the user edited other fields, the old currentUser object should be compared to this return.
      */
-    User displayAndEditUserProfile(User currentUser) {
+    public User displayAndEditUserProfile(User currentUser) {
         System.out.println(currentUser.detailedDescription(menuTranslation));
         Integer age = currentUser.getAge();
         String[] favoriteCategories = currentUser.getFavoriteCategories();
@@ -286,7 +290,7 @@ class Menu {
      * Prints all user's notifications and allows to mark them as read
      * @param user Current User object to fetch notifications
      */
-    void displayNotifications (User user) {
+    public void displayNotifications (User user) {
         ArrayList<Notification> notifications;
         try {
             notifications = dbConnection.getAllNotificationsByUser(user);
@@ -348,9 +352,9 @@ class Menu {
      * Display all the events an user has created
      * @param user Current User object to fetch events
      */
-    Event displayAndSelectCreatedEvents(User user) {
+    public Event displayAndSelectCreatedEvents(User user) {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
-        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+        JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
         ArrayList<Event> eventsInDB = null;
         try {
             eventsInDB = dbConnection.getEventsByCreator(user);
@@ -380,9 +384,9 @@ class Menu {
      * @param user Current User object to fetch events
      * @param currentDateTime
      */
-    void displayEventsByRegistration(User user, LocalDateTime currentDateTime) {
+    public void displayEventsByRegistration(User user, LocalDateTime currentDateTime) {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
-        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+        JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
 
         ArrayList<Event> eventsInDB = null;
 
@@ -448,7 +452,7 @@ class Menu {
      * @return Event object of the right sub-class with required fields compiled - WARNING: can be null!
      *
      */
-    Event createEvent(User user, LocalDateTime currentDateTime) throws IllegalStateException {
+    public Event createEvent(User user, LocalDateTime currentDateTime) throws IllegalStateException {
         EventFactory eFactory = new EventFactory();
         Event event = null;
         StringBuilder sb = new StringBuilder();
@@ -481,7 +485,7 @@ class Menu {
      * @return true if the user wants to register, false otherwise
      *
      */
-    boolean registerEvent() {
+    public boolean registerEvent() {
         Character userInput = null;
 
         do {
@@ -501,14 +505,14 @@ class Menu {
      * @return a LinkedHashMap such as allCostsMap, but with only the wanted optional costs, so it's a subset of
      *         the original maps
      */
-    LinkedHashMap<String, OptionalCost> wantedOptionalCosts(LinkedHashMap<String, OptionalCost> allCostsMap) {
+    public LinkedHashMap<String, OptionalCost> wantedOptionalCosts(LinkedHashMap<String, OptionalCost> allCostsMap) {
         if (allCostsMap == null) return null;
         Character userInput = null;
         Iterator iterator  = allCostsMap.entrySet().iterator(); // Get an iterator for our map
         LinkedHashMap<String, OptionalCost> wantedCosts = new LinkedHashMap<>();
 
         Path eventJsonPath = Paths.get(Event.getJsonPath());
-        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+        JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
 
         while(iterator.hasNext()) {
             Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
@@ -534,7 +538,7 @@ class Menu {
      * @return true if the user wants to send invites
      *
      */
-    boolean sendInvite() {
+    public boolean sendInvite() {
         Character userInput = null;
 
         do {
@@ -551,7 +555,7 @@ class Menu {
      * @return true if the event has to be published, false otherwise
      *
      */
-    boolean publishEvent() {
+    public boolean publishEvent() {
         Character userInput = null;
 
         do {
@@ -568,7 +572,7 @@ class Menu {
      * @return true if the event has to be withdrawn, false otherwise
      *
      */
-    boolean withdrawEvent() {
+    public boolean withdrawEvent() {
         Character userInput = null;
 
         do {
@@ -614,12 +618,12 @@ class Menu {
     }
 
     /**
-     * Fills all the fields of a given impl.Event object
+     * Fills all the fields of a given model.Event object
      * @throws IllegalStateException if user input is logically inconsistent (start date after end date and so on)
      */
     private void fillEventFields(Event event, LocalDateTime currentDateTime) throws IllegalStateException {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
-        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+        JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
 
         LinkedHashMap<String, Class<?>> eventFieldsMap = event.getAttributesWithType();
 
@@ -654,7 +658,7 @@ class Menu {
      */
     private void printEventFieldsName(Event event) {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
-        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+        JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
 
         int maxLength = 0;
 
@@ -685,10 +689,11 @@ class Menu {
      *              - 1st element: Category's full name
      *              - 2nd element: Category's description
      *          If the category does not exist, empty ArrayList.
+     * // TODO remove this method altogether
      */
-    static ArrayList<String> getCategoryDescription(String eventType) {
+    public static ArrayList<String> getCategoryDescription(String eventType) {
         Path eventJsonPath = Paths.get(Event.getJsonPath());
-        Main.jsonTranslator eventTranslation = new Main.jsonTranslator(eventJsonPath.toString());
+        JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
 
         ArrayList<String> returnCatDescr = new ArrayList<>();
 
@@ -704,7 +709,7 @@ class Menu {
      * @param salt A byte array to salt the password with
      * @return A String result of salt + hashing operation
      */
-    static String SHA512PasswordHash(char[] password, byte[] salt) {
+    public static String SHA512PasswordHash(char[] password, byte[] salt) {
         byte[] byteArrayPassword = charArrayToByteArray(password);
         String generatedPassword = null; // Just to shut the compiler up, this variable WILL be initialized once we return
         try {
@@ -728,7 +733,7 @@ class Menu {
      * @param charArray char array
      * @return A byte array representing our chars
      */
-    static byte[] charArrayToByteArray(char[] charArray) {
+    public static byte[] charArrayToByteArray(char[] charArray) {
         byte[] byteArray = new byte[charArray.length];
         for(int i= 0; i < charArray.length; i++) {
             byteArray[i] = (byte)(0xFF & (int)charArray[i]);

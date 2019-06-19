@@ -1,9 +1,7 @@
-package impl;
+package model;
 
-import impl.fields.OptionalCost;
-import impl.fields.Sex;
-import interfaces.LegalObject;
-import interfaces.ReflectionInterface;
+import model.fields.OptionalCost;
+import model.fields.Sex;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
@@ -51,7 +49,7 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      * Gets the available OptionalCosts for this event, which are none, so returns null
      * @return null
      */
-    LinkedHashMap<String, OptionalCost> getOptionalCosts() {
+    public LinkedHashMap<String, OptionalCost> getOptionalCosts() {
         return null;
     }
 
@@ -59,7 +57,7 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      * Gets the available OptionalCosts for this event, which are none, so returns null
      * @return null
      */
-    LinkedHashMap<UUID, Integer> getOptionalCostsByUUID() {
+    public LinkedHashMap<UUID, Integer> getOptionalCostsByUUID() {
         return null;
     }
 

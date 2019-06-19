@@ -1,6 +1,8 @@
-package impl;
+package model;
 
-import impl.fields.Sex;
+import DMO.JsonTranslator;
+import menu.Menu;
+import model.fields.Sex;
 
 import java.util.*;
 
@@ -19,7 +21,7 @@ public class User {
      * @param gender Sex object related to user's sex
      * @param age User's age
      */
-    User(String username, String hashedPassword, Sex gender, Integer age, String[] favoriteCategories) {
+    public User(String username, String hashedPassword, Sex gender, Integer age, String[] favoriteCategories) {
         this.username = username;
         this.hashedPassword = hashedPassword;
         this.userID = UUID.randomUUID();
@@ -36,7 +38,7 @@ public class User {
      * @param gender Sex object related to user's sex
      * @param age User's age
      */
-    User(String username, String hashedPassword, UUID userID, Sex gender, Integer age, String[] favoriteCategories) {
+    public User(String username, String hashedPassword, UUID userID, Sex gender, Integer age, String[] favoriteCategories) {
         this.username = username;
         this.hashedPassword = hashedPassword;
         this.userID = userID;
@@ -51,19 +53,19 @@ public class User {
         return userID.toString();
     }
 
-    String getUsername() {
+    public String getUsername() {
         return username;
     }
 
-    String getHashedPassword() {
+    public String getHashedPassword() {
         return hashedPassword;
     }
 
-    Sex getGender() { return gender; }
+    public Sex getGender() { return gender; }
 
-    Integer getAge() { return age; }
+    public Integer getAge() { return age; }
 
-    String[] getFavoriteCategories() { return favoriteCategories; }
+    public String[] getFavoriteCategories() { return favoriteCategories; }
 
     /**
      * A full user description with all the fields that can be printed
@@ -71,7 +73,7 @@ public class User {
      *                         Field names such as "genderInput" and similar can so be translated into human readable forms.
      * @return Description string
      */
-    String detailedDescription(Main.jsonTranslator menuTranslation) {
+    public String detailedDescription(JsonTranslator menuTranslation) {
         StringBuilder sb = new StringBuilder();
         sb.append("Username: ").append(this.username).append('\n');
         sb.append(menuTranslation.getTranslation("genderInput")).append(": ").append(gender);

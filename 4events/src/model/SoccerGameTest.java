@@ -1,6 +1,6 @@
-package impl;
+package model;
 
-import impl.fields.Sex;
+import model.fields.Sex;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -8,8 +8,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static impl.Menu.SHA512PasswordHash;
-import static impl.Menu.charArrayToByteArray;
+import static menu.Menu.SHA512PasswordHash;
+import static menu.Menu.charArrayToByteArray;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SoccerGameTest {

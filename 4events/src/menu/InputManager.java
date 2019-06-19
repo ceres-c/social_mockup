@@ -1,7 +1,7 @@
-package impl;
+package menu;
 
-import impl.fields.OptionalCost;
-import impl.fields.Sex;
+import model.fields.OptionalCost;
+import model.fields.Sex;
 
 import java.time.Duration;
 import java.time.LocalDate;

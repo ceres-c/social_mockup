@@ -1,8 +1,6 @@
-package impl;
+package model;
 
-import impl.fields.OptionalCost;
-import interfaces.LegalObject;
-import interfaces.ReflectionInterface;
+import model.fields.OptionalCost;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
@@ -55,7 +53,7 @@ public class MountainHiking extends Event implements LegalObject, ReflectionInte
      *                            i.e. "lodge" for MountainHiking
      *                          - Value is a OptionalField object
      */
-    LinkedHashMap<String, OptionalCost> getOptionalCosts() {
+    public LinkedHashMap<String, OptionalCost> getOptionalCosts() {
         LinkedHashMap<String, OptionalCost> costsMap = new LinkedHashMap<>();
         if (coach != null) costsMap.put("coach", this.coach);
         if (lodge != null) costsMap.put("lodge", this.lodge);
@@ -70,7 +68,7 @@ public class MountainHiking extends Event implements LegalObject, ReflectionInte
      *                          - Key is costs's UUID
      *                          - Value is a OptionalField object
      */
-    LinkedHashMap<UUID, Integer> getOptionalCostsByUUID() {
+    public LinkedHashMap<UUID, Integer> getOptionalCostsByUUID() {
         LinkedHashMap<UUID, Integer> costsMap = new LinkedHashMap<>();
         if (coach != null) costsMap.put(this.coach.getCostID(), this.coach.getCostAmount());
         if (lodge != null) costsMap.put(this.lodge.getCostID(), this.lodge.getCostAmount());
