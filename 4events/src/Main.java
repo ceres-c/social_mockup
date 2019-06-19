@@ -1,10 +1,10 @@
 import DMO.Connector;
 import DMO.JsonConfigReader;
 import DMO.JsonTranslator;
-import controller.LoginSignupController;
+import controller.LoginHelper;
 import menu.*;
-import menu.commands.MainCommand;
 import menu.commands.DashboardCommand;
+import menu.commands.MainCommand;
 import model.*;
 
 import java.nio.file.Path;
@@ -19,8 +19,7 @@ public class Main {
 
     public static void main(String[] args) {
         Connector dbConnection = null; // Declared null to shut the compiler up, on usage it will always be properly instanced
-
-        CryptoHelper crypto = new CryptoHelper();
+        MainCommand userSelection;
 
         Path configJsonPath = Paths.get(CONFIG_JSON_PATH);
         JsonConfigReader config = new JsonConfigReader(configJsonPath.toString());
@@ -53,37 +52,14 @@ public class Main {
 
         System.out.println(menuTranslation.getTranslation("welcome"));
 
-        // Login handling begins here
-        LoginSignupController loginSignupController = new LoginSignupController(menuTranslation, dbConnection);
-        LoginSignupView loginSignupView = new LoginSignupView(menuTranslation);
-        loginSignupView.print();
-        Integer userInput = loginSignupView.parseInput();
-        if (userInput == 1) {
-            // Login
-            LoginView login = new LoginView(menuTranslation, crypto);
-            login.print();
-            currentUser = loginSignupController.login(login.parseInput());
-        } else {
-            // Sign Up
-            SignUpView signUp = new SignUpView(menuTranslation, eventTranslation, dbConnection, crypto);
-            signUp.print();
-            currentUser = loginSignupController.signup(signUp.parseInput());
-            // Sign Up
-        }
-        // End of login return
+        LoginHelper loginHelper = new LoginHelper(menuTranslation, eventTranslation, dbConnection);
+        currentUser = loginHelper.login();
 
         MainMenuView menuView = new MainMenuView(menuTranslation, dbConnection, currentUser);
 
-        menuView.print();
-
-        MainCommand userSelection = MainCommand.INVALID;
-
         while (true) {
+            menuView.print();
             userSelection = menuView.parseInput();
-            System.out.println(userSelection);
-
-            /*
-            userSelection = menu.displayMainMenu(currentUser);
             switch (userSelection) {
                 case INVALID:
                     break;
@@ -332,7 +308,7 @@ public class Main {
                     menu.displayHelp();
                     break;
                 case LOGOUT:
-                    while ((currentUser = menu.loginOrSignup()) == null); // Simply refreshes currentUser object
+                    currentUser = loginHelper.login();
                     break;
                 case QUIT:
                     dbConnection.closeDb();
@@ -349,7 +325,6 @@ public class Main {
                 e.printStackTrace();
                 System.exit(1);
             }
-            */
         }
     }
 
