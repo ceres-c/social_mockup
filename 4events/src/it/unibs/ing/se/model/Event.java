@@ -2,13 +2,10 @@ package it.unibs.ing.se.model;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.util.*;
 import java.time.LocalDateTime;
 
-import it.unibs.ing.se.DMO.Connector;
-import it.unibs.ing.se.DMO.JsonTranslator;
 import it.unibs.ing.se.model.fields.OptionalCost;
 
 /**
@@ -55,7 +52,9 @@ public abstract class Event implements LegalObject, ReflectionInterface {
      *
      * Here be dragons
      */
-    public Event() { }
+    public Event() {
+        this.registeredUsers = new ArrayList<>();
+    }
 
     public Event(UUID eventID, UUID creatorID, String eventType) {
         this.eventID = eventID;
@@ -99,15 +98,6 @@ public abstract class Event implements LegalObject, ReflectionInterface {
     public abstract LinkedHashMap<String, OptionalCost> getOptionalCosts();
 
     /**
-     * Gets the available OptionalCosts for this event
-     * Should return null if the event has not OptionalCosts
-     * @return a LinkedHashMap with a String as a key and a OptionalCost as Value
-     *                          - Key is costs's UUID
-     *                          - Value is a OptionalField object
-     */
-    public abstract LinkedHashMap<UUID, Integer> getOptionalCostsByUUID();
-
-    /**
      *
      * @return Returns an ArrayList with String representation of registered users' UUID
      */
@@ -126,14 +116,17 @@ public abstract class Event implements LegalObject, ReflectionInterface {
      */
     public Double totalCost(ArrayList<UUID> wantedCosts) {
         Double totalCost = this.cost;
-        LinkedHashMap<UUID, Integer> optionalCosts = this.getOptionalCostsByUUID();
+        LinkedHashMap<String, OptionalCost> optionalCosts = this.getOptionalCosts();
         if (optionalCosts == null) {
             return totalCost;
         }
-        for (UUID costID : wantedCosts) {
-            if (!optionalCosts.containsKey(costID))
-                throw new IllegalArgumentException("ALERT: Wanted cost " + costID + " is not present in event's available costs"); // This should never happen (TM)
-            totalCost += optionalCosts.get(costID);
+
+        for (UUID wantedCostID : wantedCosts) {
+            for (String key : optionalCosts.keySet()) {
+                OptionalCost cost = optionalCosts.get(key);
+                if (cost.getCostID().equals(wantedCostID))
+                    totalCost += cost.getCostAmount();
+            }
         }
         return totalCost;
     }
@@ -175,20 +168,20 @@ public abstract class Event implements LegalObject, ReflectionInterface {
     /**
      * A method to remove a userID from the Event object so that a User can be unregistered
      * No need for overloaded method with UUID as a parameter since no deregistration action should generate from the database
-     * @param user A User object from which the UserID will be taken
+     * @param userID UUID of the user to deregister
      * @return True if deregistration was succesful
      * @throws IllegalStateException If User was not registered
      * @throws IllegalArgumentException If the event has reached minimum number of registered users (0)
      */
-    public boolean deregister(User user, LocalDateTime currentDateTime) throws IllegalArgumentException, IllegalStateException {
+    public boolean deregister(UUID userID, LocalDateTime currentDateTime) throws IllegalArgumentException, IllegalStateException {
         if (this.registeredUsersCount() == 0) {
             throw new IllegalStateException("ALERT: Event" + this.getEventID().toString() + " has already reached min number of users (0)");
-        } else if (!this.userIDAlreadyRegistered(user.getUserID())) {
-            throw new IllegalArgumentException("ALERT: User " + user.getUsername() + " was not registered to this event");
+        } else if (!this.userIDAlreadyRegistered(userID)) {
+            throw new IllegalArgumentException("ALERT: User " + userID + " was not registered to this event");
         } else if (currentDateTime.isAfter(this.deregistrationDeadline)) {
             throw new IllegalStateException("ALERT: Can't deregister because deregistrationDeadline has passed");
         }
-        return registeredUsers.remove(user.getUserID());
+        return registeredUsers.remove(userID);
     }
 
     /**

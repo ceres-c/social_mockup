@@ -9,16 +9,14 @@ import java.util.*;
 
 abstract public class AbstractEventsView implements PrintableInterface<UUID> {
     protected JsonTranslator menuTranslation;
-    protected JsonTranslator eventTranslation;
+    private JsonTranslator eventTranslation;
     protected Connector dbConnection;
     protected ArrayList<UUID> eventIDs;
-    protected UUID currentUserID;
 
-    public AbstractEventsView(UUID currentUserID) {
+    AbstractEventsView() {
         dbConnection = Connector.getInstance();
         this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
         this.eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
-        this.currentUserID = currentUserID;
     }
 
     /**

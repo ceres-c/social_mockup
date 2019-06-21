@@ -20,6 +20,8 @@ public class DashboardController implements ControllerInterface<DashboardCommand
 
     @Override
     public void perform(DashboardCommand selection) {
+        UUID selectedEvent;
+        EventCommand userCommand;
         switch (selection) {
             case INVALID:
                 System.err.println(menuTranslation.getTranslation("invalidUserSelection"));
@@ -42,13 +44,13 @@ public class DashboardController implements ControllerInterface<DashboardCommand
                 CreatedEventsView createdEventsView = new CreatedEventsView(currentUserID);
                 createdEventsView.createWorkingSet(); // Fetch all the events a user has created
                 createdEventsView.print();
-                UUID selectedEvent = createdEventsView.parseInput(); // UUID of the Event selected by the user
+                selectedEvent = createdEventsView.parseInput(); // UUID of the Event selected by the user
                 if (selectedEvent == null) // In case the user did not select any event
                     break;
 
-                CreatedEventInfoView eventInfoView = new CreatedEventInfoView(selectedEvent);
-                eventInfoView.print();
-                EventCommand userCommand = eventInfoView.parseInput();
+                CreatedEventInfoView createdEventInfoView = new CreatedEventInfoView(selectedEvent);
+                createdEventInfoView.print();
+                userCommand = createdEventInfoView.parseInput();
                 CreatedEventsController createdEventsController = new CreatedEventsController(selectedEvent);
                 createdEventsController.perform(userCommand);
                 break;
@@ -56,7 +58,15 @@ public class DashboardController implements ControllerInterface<DashboardCommand
                 RegisteredEventsView registeredEventsView = new RegisteredEventsView(currentUserID);
                 registeredEventsView.createWorkingSet(); // Fetch all the events a user has registered to
                 registeredEventsView.print();
-                // TODO controller eventi registrati
+                selectedEvent = registeredEventsView.parseInput();
+                if (selectedEvent == null) // In case the user did not select any event
+                    break;
+
+                RegisteredEventInfoView registeredEventInfoView = new RegisteredEventInfoView(selectedEvent);
+                registeredEventInfoView.print();
+                userCommand = registeredEventInfoView.parseInput();
+                RegisteredEventsController registeredEventsController = new RegisteredEventsController(selectedEvent, currentUserID);
+                registeredEventsController.perform(userCommand);
         }
     }
 }

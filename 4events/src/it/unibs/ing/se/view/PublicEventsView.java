@@ -2,19 +2,12 @@ package it.unibs.ing.se.view;
 
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
-public class RegisteredEventsView extends AbstractEventsView {
-    UUID currentUserID;
-
-    public RegisteredEventsView(UUID currentUserID) {
-        this.currentUserID = currentUserID;
-    }
-
+public class PublicEventsView extends AbstractEventsView {
     @Override
     public void createWorkingSet() {
         try {
-            eventIDs = dbConnection.getEventsByRegistration(currentUserID);
+            eventIDs = dbConnection.getOpenEvents();
         } catch (SQLException e) {
             System.err.println(menuTranslation.getTranslation("SQLError"));
             System.exit(1);
