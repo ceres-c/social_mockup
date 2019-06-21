@@ -7,7 +7,7 @@ import java.util.UUID;
  */
 public class EventFactory {
     /**
-     *
+     * Instantiates a Event object of the current subclass given eventType
      * @param eventType A String referring to the first column in categories table of the DB
      * @param creatorID The UUID of the user who's creating the event
      * @return A Event Object of the right subclass with provided information in place

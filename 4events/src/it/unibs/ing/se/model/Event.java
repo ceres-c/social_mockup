@@ -44,8 +44,6 @@ public abstract class Event implements LegalObject, ReflectionInterface {
     public  LocalDateTime   endDate;
     public  String          notes;
 
-    private final String[] mandatoryFields = {"participantsMin", "registrationDeadline", "location", "startDate", "cost"};
-
     /**
      * This empty constructor has to be used ONLY for dummy objects, such as those used to print field names in help section.
      * If used for Event Objects that will be manipulated, it WILL lead to NullPointerExceptions
@@ -374,35 +372,6 @@ public abstract class Event implements LegalObject, ReflectionInterface {
     }
 
     /**
-     * A method to get the names of public fields of a class and its fathers
-     * @return an ArrayList of Strings
-     */
-    public ArrayList<String> getAttributesName(){
-        Field[] superFields = this.getClass().getSuperclass().getFields(); // Only public fields
-        Field[] thisFields = this.getClass().getDeclaredFields(); // Both public and private fields
-
-        ArrayList <String> returnFields = new ArrayList<>();
-
-        for (Field field:superFields) {
-            /*
-             * Following line return only the name of the field instead of full class name + field.
-             * It gets the last occurrence of the '.' char, add 1 to it (to exclude the dot itself)
-             * and then trims the string gotten from the reflection.
-             */
-            String fieldName = field.toString().substring( field.toString().lastIndexOf('.') + 1 );
-            returnFields.add(fieldName);
-        }
-        for (Field field:thisFields) {
-            if (field.getModifiers() == Modifier.PUBLIC) { // Filter out only public fields
-                // Same goes for this line
-                String fieldName = field.toString().substring( field.toString().lastIndexOf('.') + 1 );
-                returnFields.add(fieldName);
-            }
-        }
-        return returnFields;
-    }
-
-    /**
      * A method to set a field to a given object passed from the caller
      */
     public void setAttribute(String fieldName, Object content) {
@@ -416,15 +385,6 @@ public abstract class Event implements LegalObject, ReflectionInterface {
             System.out.println("ALERT: Illegal access on field: " + fieldName);
             e.printStackTrace();
         }
-    }
-
-    /**
-     * A method to check if a field is mandatory or optional
-     */
-    public boolean isOptional(String fieldName) {
-        for (String field:mandatoryFields)
-            if (fieldName.equals(field)) return false;
-        return true;
     }
 
     /**

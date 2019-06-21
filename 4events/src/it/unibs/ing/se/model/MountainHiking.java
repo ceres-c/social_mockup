@@ -78,16 +78,6 @@ public class MountainHiking extends Event implements LegalObject, ReflectionInte
     }
 
     /**
-     * A method to check if a field is mandatory or optional
-     */
-    public boolean isOptional(String fieldName) {
-        if (! super.isOptional(fieldName)) return false;
-        for (String field:mandatoryFields)
-            if (fieldName.equals(field)) return false;
-        return true;
-    }
-
-    /**
      * A method to check if the values input by an user are logically valid, used before saving to the database
      * @return boolean:
      *      - True if legal

@@ -3,7 +3,6 @@ package it.unibs.ing.se;
 import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonConfigReader;
 import it.unibs.ing.se.DMO.JsonTranslator;
-import it.unibs.ing.se.controller.LoginHelper;
 import it.unibs.ing.se.controller.MainMenuController;
 import it.unibs.ing.se.view.*;
 import it.unibs.ing.se.view.commands.MainCommand;
@@ -19,28 +18,21 @@ public class Main {
     private static final String CONFIG_JSON_PATH = "config.json";
 
     public static void main(String[] args) {
-        MainCommand userSelection;
-
         Path configJsonPath = Paths.get(CONFIG_JSON_PATH);
         JsonConfigReader config = new JsonConfigReader(configJsonPath.toString());
 
         JsonTranslator menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
 
-        JsonTranslator eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
-
-        LocalDateTime currentDateTime = LocalDateTime.now(); // TODO remove this
-        User currentUser; // TODO remove this
-
-        // TODO remove this dbConnection altogether
-        Connector dbConnection = null; // Declared null to shut the compiler up, on usage it will always be properly instanced
+        // Initializes the Connector for future usage
         try {
-            dbConnection = Connector.getInstance(config.getDBURL(), config.getDBUser(), config.getDBPassword());
+            Connector.getInstance(config.getDBURL(), config.getDBUser(), config.getDBPassword());
         } catch (SQLException e) {
             System.out.println(menuTranslation.getTranslation("SQLError"));
             e.printStackTrace();
             System.exit(1);
         }
 
+        /*
         try { // TODO muovere altrove
             updateAllEvents(dbConnection, eventTranslation, currentDateTime);
         } catch (SQLException e) {
@@ -49,6 +41,7 @@ public class Main {
         }
 
         Menu menu = Menu.getInstance(dbConnection, menuTranslation); // TODO remove this
+         */
 
         System.out.println(menuTranslation.getTranslation("welcome"));
 
@@ -57,6 +50,7 @@ public class Main {
 
         UUID currentUserID = mainController.getCurrentUserID();
         MainMenuView mainView = new MainMenuView(currentUserID);
+        MainCommand userSelection;
 
         while (true) {
             mainView.print();
@@ -343,6 +337,7 @@ public class Main {
      * @param currentDateTime LocalDateTime object with the date to check against if status has to be updated or not
      * @throws SQLException If a database access error occurs
      */
+    /* // TODO move this method somewhere else and change called methods
     static private void updateAllEvents(Connector dbConnection, JsonTranslator eventTranslation, LocalDateTime currentDateTime) throws SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
@@ -391,4 +386,5 @@ public class Main {
             }
         }
     }
+     */
 }

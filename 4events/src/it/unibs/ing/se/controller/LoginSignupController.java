@@ -10,11 +10,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.UUID;
 
-class LoginSignupController {
+public class LoginSignupController {
     private JsonTranslator menuTranslation;
     private Connector dbConnection;
 
-    LoginSignupController() {
+    public LoginSignupController() {
         this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
         try {
             dbConnection = Connector.getInstance();
@@ -24,7 +24,7 @@ class LoginSignupController {
         }
     }
 
-    UUID login(ArrayList<String> userData) {
+    public UUID login(ArrayList<String> userData) {
         String username = userData.get(0);
         String hashedPassword = userData.get(1);
 
@@ -41,7 +41,7 @@ class LoginSignupController {
         return userID;
     }
 
-    UUID signup(UserCore userCore) {
+    public UUID signup(UserCore userCore) {
         String username = userCore.getUsername();
         String hashedPassword = userCore.getHashedPassword();
         Sex gender = userCore.getGender();

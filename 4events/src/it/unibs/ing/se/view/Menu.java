@@ -89,6 +89,7 @@ public class Menu {
     /**
      * Prints out all the available categories and their respective fields with a brief description
      */
+    /*
     public void displayHelp() {
         System.out.println(menuTranslation.getTranslation("categoryList"));
 
@@ -107,6 +108,8 @@ public class Menu {
             printEventFieldsName(event);
         }
     }
+
+     */
 
 
     /**
@@ -370,6 +373,7 @@ public class Menu {
      * @return Event object of the right sub-class with required fields compiled - WARNING: can be null!
      *
      */
+    /*
     public Event createEvent(User user, LocalDateTime currentDateTime) throws IllegalStateException {
         EventFactory eFactory = new EventFactory();
         Event event = null;
@@ -396,6 +400,7 @@ public class Menu {
 
         return event;
     }
+     */
 
     /**
      * Asks the user to choose if he wants to register to a Event.
@@ -507,7 +512,13 @@ public class Menu {
      * @return An ArrayList of String objects containing categories names as saved in database table "categories"
      */
     private String[] selectFavoriteCategories () {
-        ArrayList<String> availableCategories = dbConnection.getCategories();
+        ArrayList<String> availableCategories = null;
+        try {
+            availableCategories = dbConnection.getCategories();
+        } catch (SQLException e) {
+            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.exit(1);
+        }
         StringBuilder sb = new StringBuilder();
         int max = 0;
 
@@ -539,6 +550,7 @@ public class Menu {
      * Fills all the fields of a given it.unibs.ing.se.model.Event object
      * @throws IllegalStateException if user input is logically inconsistent (start date after end date and so on)
      */
+    /*
     private void fillEventFields(Event event, LocalDateTime currentDateTime) throws IllegalStateException {
         Path eventJsonPath = Paths.get(JsonTranslator.EVENT_JSON_PATH);
         JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
@@ -570,10 +582,12 @@ public class Menu {
 
         event.isLegal(currentDateTime);
     }
+    */
 
     /**
      * Prints name and description of available categories' fields
      */
+    /*
     private void printEventFieldsName(Event event) {
         Path eventJsonPath = Paths.get(JsonTranslator.EVENT_JSON_PATH);
         JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
@@ -600,6 +614,7 @@ public class Menu {
         }
         System.out.println(outputBuffer);
     }
+    */
 
     /**
      * Get a category's name and description given its internal name (eventType in db)

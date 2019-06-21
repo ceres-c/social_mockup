@@ -1,12 +1,16 @@
 package it.unibs.ing.se.controller;
 
+import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonTranslator;
+import it.unibs.ing.se.controller.helpers.LoginHelper;
 import it.unibs.ing.se.view.DashboardView;
+import it.unibs.ing.se.view.NewEventView;
 import it.unibs.ing.se.view.PublicEventInfoView;
 import it.unibs.ing.se.view.PublicEventsView;
 import it.unibs.ing.se.view.commands.DashboardCommand;
 import it.unibs.ing.se.view.commands.EventCommand;
 import it.unibs.ing.se.view.commands.MainCommand;
+import it.unibs.ing.se.view.inputwrappers.EventInput;
 
 import java.util.UUID;
 
@@ -58,6 +62,21 @@ public class MainMenuController implements ControllerInterface<MainCommand> {
                 EventCommand userCommand = publicEventInfoView.parseInput();
                 PublicEventsController publicEventsController = new PublicEventsController(selectedEvent, currentUserID);
                 publicEventsController.perform(userCommand);
+                break;
+            case NEW_EVENT:
+                NewEventView newEventView = new NewEventView();
+                newEventView.print();
+                EventInput userInput = newEventView.parseInput();
+                NewEventController newEventController = new NewEventController(currentUserID);
+                newEventController.perform(userInput);
+                break;
+            case HELP:
+                // TODO help
+                break;
+            case QUIT:
+                Connector.getInstance().closeDb();
+                System.out.println(menuTranslation.getTranslation("exit"));
+                System.exit(0);
                 break;
         }
     }

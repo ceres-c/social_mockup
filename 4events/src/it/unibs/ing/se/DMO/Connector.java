@@ -311,25 +311,21 @@ public class Connector {
      *          If no categories, empty ArrayList.
      * @throws IllegalStateException If called before a database connection is established
      * @throws NoSuchElementException If the database table public.categories is empty
+     * @throws SQLException Directly from SQL driver if something else bad happens
      */
-    public ArrayList<String> getCategories() throws IllegalStateException, NoSuchElementException {
+    public ArrayList<String> getCategories() throws IllegalStateException, NoSuchElementException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         ArrayList<String> returnCategories = new ArrayList<>();
-        try {
-            Statement categoriesStatement = dbConnection.createStatement();
-            ResultSet rs = categoriesStatement.executeQuery(GET_CATEGORIES_LIST);
+        Statement categoriesStatement = dbConnection.createStatement();
+        ResultSet rs = categoriesStatement.executeQuery(GET_CATEGORIES_LIST);
 
-            if (!rs.next()) { // rs.next() returns false when the query has no results
-                throw new NoSuchElementException("ALERT: No categories in the database");
-            } else {
-                do {
-                    returnCategories.add(rs.getString(1));
-                } while (rs.next());
-            }
-        } catch(java.sql.SQLException e) {
-            System.out.println("ALERT: Failed getting categories from database!");
-            e.printStackTrace();
+        if (!rs.next()) { // rs.next() returns false when the query has no results
+            throw new NoSuchElementException("ALERT: No categories in the database");
+        } else {
+            do {
+                returnCategories.add(rs.getString(1));
+            } while (rs.next());
         }
         return returnCategories;
     }

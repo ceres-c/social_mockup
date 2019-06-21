@@ -3,6 +3,7 @@ package it.unibs.ing.se.view;
 import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonTranslator;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class FavoriteCategoriesView implements PrintableInterface<ArrayList<String>> {
@@ -15,7 +16,12 @@ public class FavoriteCategoriesView implements PrintableInterface<ArrayList<Stri
         this.eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
         try {
             Connector dbConnection = Connector.getInstance();
-            availableCategories = dbConnection.getCategories();
+            try {
+                availableCategories = dbConnection.getCategories();
+            } catch (SQLException e) {
+                System.err.println(menuTranslation.getTranslation("SQLError"));
+                System.exit(1);
+            }
         } catch (IllegalStateException e) {
             System.err.println(menuTranslation.getTranslation("SQLError"));
             System.exit(1);

@@ -1,7 +1,7 @@
 package it.unibs.ing.se.view;
 
 import it.unibs.ing.se.DMO.JsonTranslator;
-import it.unibs.ing.se.model.CryptoHelper;
+import it.unibs.ing.se.controller.helpers.CryptoHelper;
 
 import java.util.ArrayList;
 

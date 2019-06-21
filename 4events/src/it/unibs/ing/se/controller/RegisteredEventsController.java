@@ -2,6 +2,7 @@ package it.unibs.ing.se.controller;
 
 import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonTranslator;
+import it.unibs.ing.se.controller.helpers.EventHelper;
 import it.unibs.ing.se.model.Event;
 import it.unibs.ing.se.view.commands.EventCommand;
 
@@ -33,25 +34,9 @@ public class RegisteredEventsController implements ControllerInterface<EventComm
             case INVALID:
                 return;
             case DEREGISTER:
-                Event event = null;
-                try {
-                    event = dbConnection.getEvent(eventID);
-                } catch (SQLException e) {
-                    System.err.println(menuTranslation.getTranslation("SQLError"));
-                    System.exit(1);
-                }
-                try {
-                    event.deregister(userID, LocalDateTime.now());
-                } catch (IllegalStateException | IllegalArgumentException e) {
-                    System.err.println(menuTranslation.getTranslation("errorEventDeregistration"));
-                    System.err.println(e.getMessage());
-                }
-                try {
-                    dbConnection.updateEventRegistrations(event);
-                } catch (SQLException e) {
-                    System.err.println(menuTranslation.getTranslation("SQLError"));
-                    System.exit(1);
-                }
+                EventHelper eHelper = new EventHelper();
+                eHelper.deregister(eventID, userID);
+                eHelper.updateStatus(eventID);
                 break;
         }
     }

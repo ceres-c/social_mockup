@@ -43,7 +43,7 @@ public class WantedOptionalCostView implements PrintableInterface<LinkedHashMap<
         for (int i = 0; i < mapKeys.size(); i++) {
             String costName = mapKeys.get(i);
             OptionalCost cost = allCostsMap.get(costName);
-            sb.append(i).append(") ");
+            sb.append(i + 1).append(") ");
             sb.append(eventTranslation.getName(costName)).append(" - ");
             sb.append(cost.getCostAmount()).append("€\n");
             sb.append(eventTranslation.getDescr(costName)).append('\n');

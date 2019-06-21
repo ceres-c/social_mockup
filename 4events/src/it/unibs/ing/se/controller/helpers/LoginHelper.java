@@ -1,6 +1,6 @@
-package it.unibs.ing.se.controller;
+package it.unibs.ing.se.controller.helpers;
 
-import it.unibs.ing.se.DMO.Connector;
+import it.unibs.ing.se.controller.LoginSignupController;
 import it.unibs.ing.se.view.LoginSignupView;
 import it.unibs.ing.se.view.LoginView;
 import it.unibs.ing.se.view.SignUpView;

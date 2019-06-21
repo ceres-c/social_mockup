@@ -2,7 +2,7 @@ package it.unibs.ing.se.model;
 
 import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonConfigReader;
-import it.unibs.ing.se.Main;
+import it.unibs.ing.se.controller.helpers.CryptoHelper;
 import it.unibs.ing.se.model.fields.Sex;
 import org.junit.jupiter.api.Test;
 

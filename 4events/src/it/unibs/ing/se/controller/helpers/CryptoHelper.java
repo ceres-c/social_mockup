@@ -1,4 +1,4 @@
-package it.unibs.ing.se.model;
+package it.unibs.ing.se.controller.helpers;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

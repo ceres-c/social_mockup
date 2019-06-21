@@ -1,6 +1,7 @@
 package it.unibs.ing.se.controller;
 
 import it.unibs.ing.se.DMO.Connector;
+import it.unibs.ing.se.controller.helpers.EventHelper;
 import it.unibs.ing.se.model.Event;
 import it.unibs.ing.se.view.commands.EventCommand;
 
@@ -27,12 +28,8 @@ public class CreatedEventsController implements ControllerInterface<EventCommand
             case INVALID:
                 return;
             case PUBLISH:
-                try {
-                    dbConnection.updateEventPublished(eventID, true);
-                } catch (SQLException e) {
-                    System.err.println("FATAL: Impossible to connect to SQL database. Contact your sysadmin");
-                    System.exit(1);
-                }
+                EventHelper eHelper = new EventHelper();
+                eHelper.publish(eventID, true);
                 break;
             case WITHDRAW:
                 try {
