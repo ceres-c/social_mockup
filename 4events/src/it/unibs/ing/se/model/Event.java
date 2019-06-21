@@ -70,6 +70,8 @@ public abstract class Event implements LegalObject, ReflectionInterface {
 
     public String getEventIDAsString() { return eventID.toString(); }
 
+    public String getTitle() { return title; }
+
     public UUID getCreatorID() { return creatorID; }
 
     public String getCreatorIDAsString() { return creatorID.toString(); }
@@ -77,6 +79,10 @@ public abstract class Event implements LegalObject, ReflectionInterface {
     public String getEventType() { return eventType; }
 
     public boolean isPublished () { return published; }
+
+    public LocalDateTime getRegistrationDeadline() { return registrationDeadline; }
+
+    public LocalDateTime getStartDate() { return startDate; }
 
     public ArrayList<UUID> getRegisteredUsers() { return registeredUsers; }
 
@@ -450,56 +456,6 @@ public abstract class Event implements LegalObject, ReflectionInterface {
             throw new IllegalStateException("ALERT: deregistrationDeadline date comes after registrationDeadline");
 
         return true;
-    }
-
-    /**
-     * A short event description with: title, creator's username, registrationDeadline and start date
-     * @param eventTranslation jsonTranslator object with Event fields translation to get "pretty" string from.
-     *                         Field names such as "registrationDeadline" and similar can so be translated into human readable forms.
-     * @param myConnector Connector object to query the database for creator's username
-     * @return Short description string
-     */
-    public String synopsis (JsonTranslator eventTranslation, Connector myConnector) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(eventTranslation.getName(this.getEventType())).append('\n');
-        sb.append(eventTranslation.getName("title")).append(": ").append(this.title).append('\n');
-        try {
-            sb.append(eventTranslation.getName("creator")).append(": ").append(myConnector.getUsername(this.creatorID)).append('\t');;
-        } catch (SQLException | IllegalArgumentException e) {
-            sb.append(eventTranslation.getName("creator")).append(": Error fetching username").append('\t');;
-        }
-        sb.append(eventTranslation.getName("state")).append(": ").append(eventTranslation.getTranslation(this.currentState.name())).append('\n');
-        sb.append(eventTranslation.getName("registrationDeadline")).append(": ").append(this.registrationDeadline).append('\t');
-        sb.append(eventTranslation.getName("startDate")).append(": ").append(this.startDate).append('\n');
-        return sb.toString();
-    }
-
-    /**
-     * A full event description with all the fields that can be relevant for a user
-     * @param eventTranslation jsonTranslator object with Event fields translation to get "pretty" string from.
-     *                         Field names such as "registrationDeadline" and similar can so be translated into human readable forms.
-     * @param myConnector Connector object to query the database for creator's username
-     * @return Description string
-     */
-    public String detailedDescription (JsonTranslator eventTranslation, Connector myConnector) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(eventTranslation.getName(this.getEventType())).append('\n');
-        try {
-            sb.append(eventTranslation.getName("creator")).append(": ").append(myConnector.getUsername(this.creatorID)).append('\n');
-        } catch (SQLException | IllegalArgumentException e) {
-            sb.append(eventTranslation.getName("creator")).append(": Error fetching username\n");
-        }
-        sb.append(eventTranslation.getName("state")).append(": ").append(eventTranslation.getTranslation(this.currentState.name())).append('\n');
-
-        Iterator iterator;
-        LinkedHashMap<String, Object> setAttributes = this.getNonNullAttributesWithValue(); // Map with all currently valid attributes
-        iterator = setAttributes.entrySet().iterator(); // Get an iterator for our map
-
-        while(iterator.hasNext()) {
-            Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
-            sb.append(eventTranslation.getName((String) entry.getKey())).append(": ").append(entry.getValue()).append("\n");
-        }
-        return sb.toString();
     }
 
     @Override

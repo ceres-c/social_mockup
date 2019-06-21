@@ -17,7 +17,7 @@ public class UserProfileController implements ControllerInterface<UserCore>  {
         try {
             currentUser = dbConnection.getUser(currentUserID);
         } catch (SQLException e) {
-            System.err.println("ERRORE FATALE: Impossibile collegarsi al database. Contatta il tuo amministratore di sistema");
+            System.err.println("FATAL: Impossible to connect to SQL database. Contact your sysadmin");
             System.exit(1);
         }
     }
@@ -36,7 +36,7 @@ public class UserProfileController implements ControllerInterface<UserCore>  {
             try {
                 dbConnection.updateUser(updatedUser);
             } catch (SQLException e) {
-                System.err.println("ERRORE FATALE: Impossibile collegarsi al database. Contatta il tuo amministratore di sistema");
+                System.err.println("FATAL: Impossible to connect to SQL database. Contact your sysadmin");
                 System.exit(1);
             }
         }

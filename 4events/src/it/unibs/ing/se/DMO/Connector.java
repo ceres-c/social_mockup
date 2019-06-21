@@ -428,7 +428,8 @@ public class Connector {
 
     /**
      * Updates an Event state
-     * @param event The Event to update in database
+     * @param eventID UUID of the Event to update in database
+     * @param state Event.State object of current State
      * @return True if everything went smoothly
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
@@ -436,14 +437,14 @@ public class Connector {
      *                             by the setQueryTimeout method has been exceeded and has at least
      *                             attempted to cancel the currently running Statement
      */
-    public boolean updateEventState(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
+    public boolean updateEventState(UUID eventID, Event.State state) throws IllegalStateException, SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
-        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(UPDATE_EVENT_STATE);
-        updateEventPublishedStatement.setString(1, event.getCurrentStateAsString()); // published
-        updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
-        i = updateEventPublishedStatement.executeUpdate();
+        PreparedStatement updateEventStateStatement = dbConnection.prepareStatement(UPDATE_EVENT_STATE);
+        updateEventStateStatement.setString(1, state.name());
+        updateEventStateStatement.setString(2, eventID.toString());
+        i = updateEventStateStatement.executeUpdate();
         if (i != 1)
             throw new SQLException("ALERT: Error updating event!\nSQL INSERT query returned " + i);
         return true;
@@ -451,7 +452,8 @@ public class Connector {
 
     /**
      * Updates an Event publishing status
-     * @param event The Event to update in database
+     * @param eventID UUID of the Event to update in database
+     * @param publishStatus bool: True - Published/False - Not published
      * @return True if everything went smoothly
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
@@ -459,13 +461,13 @@ public class Connector {
      *                             by the setQueryTimeout method has been exceeded and has at least
      *                             attempted to cancel the currently running Statement
      */
-    public boolean updateEventPublished(Event event) throws IllegalStateException, SQLException, SQLTimeoutException {
+    public boolean updateEventPublished(UUID eventID, boolean publishStatus) throws IllegalStateException, SQLException, SQLTimeoutException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
         PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(UPDATE_EVENT_PUBLISHED);
-        updateEventPublishedStatement.setBoolean(1, event.isPublished()); // published
-        updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
+        updateEventPublishedStatement.setBoolean(1, publishStatus);
+        updateEventPublishedStatement.setString(2, eventID.toString());
         i = updateEventPublishedStatement.executeUpdate();
         if (i != 1)
             throw new SQLException("ALERT: Error updating event!\nSQL INSERT query returned " + i);
@@ -486,11 +488,11 @@ public class Connector {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
-        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(UPDATE_EVENT_REGISTERED);
+        PreparedStatement updateEventRegistrationsStatement = dbConnection.prepareStatement(UPDATE_EVENT_REGISTERED);
         Array registeredUUIDDBArray = dbConnection.createArrayOf("VARCHAR", event.getRegisteredUsersAsString().toArray());
-        updateEventPublishedStatement.setArray(1, registeredUUIDDBArray); // registeredUsers
-        updateEventPublishedStatement.setString(2, event.getEventIDAsString()); // eventID
-        i = updateEventPublishedStatement.executeUpdate();
+        updateEventRegistrationsStatement.setArray(1, registeredUUIDDBArray); // registeredUsers
+        updateEventRegistrationsStatement.setString(2, event.getEventIDAsString()); // eventID
+        i = updateEventRegistrationsStatement.executeUpdate();
         if (i != 1)
             throw new SQLException("ALERT: Error updating event!\nSQL INSERT query returned " + i);
         return true;
@@ -548,53 +550,53 @@ public class Connector {
 
     /**
      * Gets all the Events a user has created and can administer
-     * @param user User object for which we're looking for events
+     * @param userID User object for which we're looking for events
      * @return ArrayList of Event objects
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    public ArrayList<Event> getEventsByCreator(User user) throws IllegalStateException, SQLException {
+    public ArrayList<UUID> getEventsByCreator(UUID userID) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
-        ArrayList<Event> returnEvents = new ArrayList<>();
+        ArrayList<UUID> returnEventIDs = new ArrayList<>();
 
         PreparedStatement getEventsByCreatorStatement = dbConnection.prepareStatement(GET_EVENTS_LIST_BY_CREATORID);
-        getEventsByCreatorStatement.setString(1, user.getUserIDAsString());
+        getEventsByCreatorStatement.setString(1, userID.toString());
         ResultSet rs = getEventsByCreatorStatement.executeQuery();
 
         if (!rs.next()) { // rs.next() returns false when the query has no results
-            throw new NoSuchElementException("ALERT: No events were created by user " + user.getUserIDAsString());
+            throw new NoSuchElementException("ALERT: No events were created by user " + userID);
         } else {
             do {
-                returnEvents.add(getEvent(UUID.fromString(rs.getString(1))));
+                returnEventIDs.add(UUID.fromString(rs.getString(1)));
             } while (rs.next());
         }
 
-        return returnEvents;
+        return returnEventIDs;
     }
 
     /**
      * Gets all the Event a user has registered to
-     * @param user User object for which we're looking for events
+     * @param userID User object for which we're looking for events
      * @return ArrayList of Event objects
      * @throws IllegalStateException If called before a database connection is established
      * @throws NoSuchElementException If the User hasn't registered to any event
      * @throws SQLException If a database access error occurs
      */
-    public ArrayList<Event> getEventsByRegistration(User user) throws IllegalStateException, NoSuchElementException, SQLException {
+    public ArrayList<UUID> getEventsByRegistration(UUID userID) throws IllegalStateException, NoSuchElementException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
-        ArrayList<Event> returnEvents = new ArrayList<>();
+        ArrayList<UUID> returnEvents = new ArrayList<>();
 
-        PreparedStatement getEventsByCreatorStatement = dbConnection.prepareStatement(GET_EVENTS_LIST_BY_REGISTERED);
-        getEventsByCreatorStatement.setString(1, user.getUserIDAsString());
-        ResultSet rs = getEventsByCreatorStatement.executeQuery();
+        PreparedStatement getEventsByRegistrationStatement = dbConnection.prepareStatement(GET_EVENTS_LIST_BY_REGISTERED);
+        getEventsByRegistrationStatement.setString(1, userID.toString());
+        ResultSet rs = getEventsByRegistrationStatement.executeQuery();
 
         if (!rs.next()) { // rs.next() returns false when the query has no results
-            throw new NoSuchElementException("ALERT: User " + user.getUserIDAsString() + " hasn't registered for any event");
+            throw new NoSuchElementException("ALERT: User " + userID + " hasn't registered for any event");
         } else {
             do {
-                returnEvents.add(getEvent(UUID.fromString(rs.getString(1))));
+                returnEvents.add(UUID.fromString(rs.getString(1)));
             } while (rs.next());
         }
 
@@ -690,30 +692,30 @@ public class Connector {
 
     /**
      * Gets the list of all the Notifications relevant to a specified User
-     * @param user The User object to search notifications for
+     * @param userID The User object to search notifications for
      * @return ArrayList of Notification objects - can be 0 elements long if there are notifications
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    public ArrayList<Notification> getAllNotificationsByUser(User user) throws IllegalStateException, SQLException {
+    public ArrayList<UUID> getAllNotifications(UUID userID) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
-        ArrayList<Notification> returnNotifications = new ArrayList<>();
+        ArrayList<UUID> notificationIDs = new ArrayList<>();
 
         PreparedStatement getNotificationsByUserStatement = dbConnection.prepareStatement(GET_NOTIFICATIONS_BY_USER);
-        getNotificationsByUserStatement.setString(1, user.getUserIDAsString());
+        getNotificationsByUserStatement.setString(1, userID.toString());
         ResultSet rs = getNotificationsByUserStatement.executeQuery();
 
         if (!rs.next()) { // rs.next() returns false when the query has no results
-            return returnNotifications;
+            return null;
         } else {
             do {
                 UUID notificationID = UUID.fromString(rs.getString(1));
-                returnNotifications.add(getNotification(notificationID));
+                notificationIDs.add(notificationID);
             } while (rs.next());
         }
 
-        return returnNotifications;
+        return notificationIDs;
     }
 
     /**
@@ -738,20 +740,20 @@ public class Connector {
     }
 
     /**
-     * Update a Notification "read" field
-     * @param notification Notification object already populated
+     * Marks a notification as read
+     * @param notificationID UUID of the notification that has to be set as read
      * @return True if update went smoothly
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException Directly from SQL driver if something else bad happens
      */
-    public boolean updateNotificationRead(Notification notification) throws IllegalStateException, SQLException {
+    public boolean markNotificationRead(UUID notificationID, boolean readStatus) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         int i = 0;
-        PreparedStatement updateEventPublishedStatement = dbConnection.prepareStatement(UPDATE_NOTIFICATION_READ);
-        updateEventPublishedStatement.setBoolean(1, notification.isRead()); // read status
-        updateEventPublishedStatement.setString(2, notification.getNotificationID().toString()); // notificationID
-        i = updateEventPublishedStatement.executeUpdate();
+        PreparedStatement markNotificationRead = dbConnection.prepareStatement(UPDATE_NOTIFICATION_READ);
+        markNotificationRead.setBoolean(1, readStatus); // read status, now hardcoded as read
+        markNotificationRead.setString(2, notificationID.toString());
+        i = markNotificationRead.executeUpdate();
         if (i != 1)
             throw new SQLException("ALERT: Error updating notification!\nSQL INSERT query returned " + i);
         return true;
@@ -764,7 +766,7 @@ public class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    private Notification getNotification(UUID notificationID) throws IllegalStateException, SQLException {
+    public Notification getNotification(UUID notificationID) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         Notification returnNotification;
@@ -794,7 +796,7 @@ public class Connector {
      * @throws NoSuchElementException If the given UUID is not associated to any event in the database
      * @throws SQLException If a database access error occurs
      */
-    private Event getEvent(UUID eventID) throws IllegalStateException, NoSuchElementException, SQLException {
+    public Event getEvent(UUID eventID) throws IllegalStateException, NoSuchElementException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
         Event event = null;

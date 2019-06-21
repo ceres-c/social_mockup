@@ -108,11 +108,13 @@ public class Menu {
         }
     }
 
+
     /**
      * Prompts the user to choose an event among public ones.
      * No checks are made to ensure the user is allowed to register to selected event (i.e.: female users can select events for males).
      * @return Event object of the selected event, null if user aborted selection.
      */
+    /*
     public Event chooseEventFromPublicList() {
         Path eventJsonPath = Paths.get(JsonTranslator.EVENT_JSON_PATH);
         JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
@@ -140,6 +142,8 @@ public class Menu {
         }
         return eventsInDB.get(userSelection - 1);
     }
+
+     */
 
     /**
      * Prompts the user to choose among available options in his dashboard
@@ -200,14 +204,14 @@ public class Menu {
      * @param user Current User object to fetch notifications
      */
     public void displayNotifications (User user) {
-        ArrayList<Notification> notifications;
+        /*ArrayList<UUID> notificationsIDs;
         try {
-            notifications = dbConnection.getAllNotificationsByUser(user);
+            notificationsIDs = dbConnection.getAllNotifications(user.getUserID());
         } catch (SQLException e) {
             System.err.println();
             return;
         }
-        if (notifications.size() == 0) {
+        if (notificationsIDs.size() == 0) {
             System.out.println(menuTranslation.getTranslation("noPersonalNotifications"));
             return;
         }
@@ -250,17 +254,19 @@ public class Menu {
             Notification notification = notifications.get(userSelection - 1);
             notification.setRead(true);
             try {
-                dbConnection.updateNotificationRead(notification);
+                dbConnection.markNotificationRead(notification);
             } catch (SQLException e) {
                 System.err.println(menuTranslation.getTranslation("errorSettingNotificationAsRead"));
             }
         }
+        */
     }
 
     /**
      * Display all the events an user has created
      * @param user Current User object to fetch events
      */
+    /*
     public Event displayAndSelectCreatedEvents(User user) {
         Path eventJsonPath = Paths.get(JsonTranslator.EVENT_JSON_PATH);
         JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
@@ -287,12 +293,14 @@ public class Menu {
         }
         return eventsInDB.get(userSelection - 1);
     }
+     */
 
     /**
      * Display all the events an user has registered to
      * @param user Current User object to fetch events
      * @param currentDateTime
      */
+    /*
     public void displayEventsByRegistration(User user, LocalDateTime currentDateTime) {
         Path eventJsonPath = Paths.get(JsonTranslator.EVENT_JSON_PATH);
         JsonTranslator eventTranslation = new JsonTranslator(eventJsonPath.toString());
@@ -351,6 +359,7 @@ public class Menu {
             }
         }
     }
+     */
 
     /**
      * Prompt the user a list of available categories.

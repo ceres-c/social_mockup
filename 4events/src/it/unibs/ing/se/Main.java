@@ -387,7 +387,7 @@ public class Main {
                         dbConnection.insertNotification(newNotification);
                     }
                 }
-                dbConnection.updateEventState(event);
+                dbConnection.updateEventState(event.getEventID(), event.getCurrentState());
             }
         }
     }

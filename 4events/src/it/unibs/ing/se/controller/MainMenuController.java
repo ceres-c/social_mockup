@@ -26,7 +26,7 @@ public class MainMenuController implements ControllerInterface<MainCommand> {
     }
 
     public void loginAndSet() {
-        currentUserID = loginHelper.login();
+        while ((currentUserID = loginHelper.login()) == null);
     }
 
     @Override
