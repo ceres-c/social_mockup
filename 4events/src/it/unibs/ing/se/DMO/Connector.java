@@ -500,10 +500,10 @@ public class Connector {
      * @throws IllegalStateException If called before a database connection is established
      * @throws SQLException If a database access error occurs
      */
-    public ArrayList<Event> getActiveEvents() throws IllegalStateException, SQLException {
+    public ArrayList<UUID> getActiveEvents() throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
-        ArrayList<Event> returnEvents = new ArrayList<>();
+        ArrayList<UUID> returnEvents = new ArrayList<>();
 
         Statement getEventsStatement = dbConnection.createStatement();
         ResultSet rs = getEventsStatement.executeQuery(GET_ACTIVE_EVENTS_LIST);
@@ -512,7 +512,7 @@ public class Connector {
             throw new NoSuchElementException("ALERT: No events in the database");
         } else {
             do {
-                returnEvents.add(getEvent(UUID.fromString(rs.getString(1))));
+                returnEvents.add(UUID.fromString(rs.getString(1)));
             } while (rs.next());
         }
 

@@ -1,7 +1,5 @@
 package it.unibs.ing.se.model;
 
-import it.unibs.ing.se.DMO.JsonTranslator;
-import it.unibs.ing.se.view.Menu;
 import it.unibs.ing.se.model.fields.Sex;
 
 import java.util.*;
@@ -53,31 +51,6 @@ public class User extends UserCore {
     public Integer getAge() { return age; }
 
     public String[] getFavoriteCategories() { return favoriteCategories; }
-
-    /**
-     * A full user description with all the fields that can be printed
-     * @param  menuTranslation object with Menu fields translation to get "pretty" string from.
-     *                         Field names such as "genderInput" and similar can so be translated into human readable forms.
-     * @return Description string
-     */
-    public String detailedDescription(JsonTranslator menuTranslation) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Username: ").append(this.username).append('\n');
-        sb.append(menuTranslation.getTranslation("genderInput")).append(": ").append(gender);
-        if (age != 0) {
-            sb.append('\n').append(menuTranslation.getTranslation("ageInput")).append(": ").append(age);
-        }
-        if (favoriteCategories != null) {
-            sb.append('\n').append(menuTranslation.getTranslation("favoriteCategoriesPrint")).append(":");
-            for (int i = 0; i < favoriteCategories.length; i++) {
-                ArrayList<String> catDescription = Menu.getCategoryDescription(favoriteCategories[i]);
-                sb.append('\n').append(i + 1).append(") ");
-                sb.append(catDescription.get(0)).append('\n'); // Category name
-                sb.append('\t').append(catDescription.get(1)); // Category description
-            }
-        }
-        return sb.toString();
-    }
 
     @Override
     public boolean equals(Object o) {

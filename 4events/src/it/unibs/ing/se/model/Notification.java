@@ -1,9 +1,6 @@
 package it.unibs.ing.se.model;
 
 
-import it.unibs.ing.se.DMO.JsonTranslator;
-
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 public class Notification {
@@ -45,36 +42,12 @@ public class Notification {
         return content;
     }
 
-    public void setNotificationID(UUID notificationID) {
-        this.notificationID = notificationID;
-    }
-
     public void setEventID(UUID eventID) {
         this.eventID = eventID;
     }
 
-    public void setRecipientID(UUID recipientID) {
-        this.recipientID = recipientID;
-    }
-
-    public void setNotificationID(String notificationID) {
-        this.notificationID = UUID.fromString(notificationID);
-    }
-
     public void setEventID(String eventID) {
         this.eventID = UUID.fromString(eventID);
-    }
-
-    public void setRead(boolean read) {
-        this.read = read;
-    }
-
-    public void setRecipientID(String recipientID) {
-        this.recipientID = UUID.fromString(recipientID);
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public void setContent(String content) {

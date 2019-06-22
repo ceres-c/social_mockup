@@ -3,8 +3,10 @@ package it.unibs.ing.se.controller;
 import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonTranslator;
 import it.unibs.ing.se.controller.helpers.EventHelper;
+import it.unibs.ing.se.controller.helpers.NotificationHelper;
 import it.unibs.ing.se.model.Event;
 import it.unibs.ing.se.model.EventFactory;
+import it.unibs.ing.se.view.NewEventInvitesView;
 import it.unibs.ing.se.view.NewEventPublishView;
 import it.unibs.ing.se.view.inputwrappers.EventInput;
 
@@ -20,7 +22,7 @@ public class NewEventController implements ControllerInterface<EventInput> {
     private JsonTranslator menuTranslation;
     private Connector dbConnection;
 
-    public NewEventController (UUID userID) {
+    NewEventController (UUID userID) {
         this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
         dbConnection = Connector.getInstance();
         this.userID = userID;
@@ -68,9 +70,13 @@ public class NewEventController implements ControllerInterface<EventInput> {
         if (publicationNeeded) {
             eHelper.publish(newEvent.getEventID(), true);
             eHelper.updateStatus(newEvent.getEventID());
-            // TODO if registered eHelper.throwNotifications
-        }
 
-        // TODO sendinvitations View
+            NewEventInvitesView newEventInvitesView = new NewEventInvitesView();
+            boolean invitesNeeded = newEventInvitesView.parseInput();
+            if (invitesNeeded) {
+                NotificationHelper notHelper = new NotificationHelper(newEvent.getEventID());
+                notHelper.sendInvites();
+            }
+        }
     }
 }

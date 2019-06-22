@@ -9,7 +9,6 @@ import java.util.UUID;
 
 public class PublicEventsController implements ControllerInterface<EventCommand> {
     protected JsonTranslator menuTranslation;
-    private Connector dbConnection;
     private UUID eventID;
     private UUID userID;
 
@@ -17,7 +16,6 @@ public class PublicEventsController implements ControllerInterface<EventCommand>
         this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
         this.eventID = eventID;
         this.userID = userID;
-        dbConnection = Connector.getInstance();
     }
 
     @Override
@@ -28,6 +26,7 @@ public class PublicEventsController implements ControllerInterface<EventCommand>
             case REGISTER:
                 EventHelper eHelper = new EventHelper();
                 eHelper.register(eventID, userID);
+                eHelper.updateStatus(eventID);
         }
     }
 }

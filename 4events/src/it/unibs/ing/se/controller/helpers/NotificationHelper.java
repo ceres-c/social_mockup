@@ -17,7 +17,7 @@ public class NotificationHelper {
     private JsonTranslator eventTranslation;
     private Event event;
 
-    NotificationHelper(UUID eventID) {
+    public NotificationHelper(UUID eventID) {
         this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
         this.eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
         dbConnection = Connector.getInstance();
@@ -77,7 +77,7 @@ public class NotificationHelper {
                         dbConnection.insertNotification(newNotification);
                     }
                     for (UUID recipientID : registeredUsers) {
-                        recipientUsername = dbConnection.getUsername(event.getCreatorID());
+                        recipientUsername = dbConnection.getUsername(recipientID);
                         ArrayList<UUID> userCosts = dbConnection.getOptionalCosts(recipientID, event.getEventID());
                         eventCost = event.totalCost(userCosts);
                         Notification newNotification = closedEventNotification(recipientID, recipientUsername, eventCost);
@@ -108,7 +108,7 @@ public class NotificationHelper {
         }
     }
 
-    void sendInvites() {
+    public void sendInvites() {
         try { // Fire off notifications to all previously registered users
             ArrayList<UUID> userIDs = dbConnection.getUserIDByOldRegistrations(event.getCreatorID(), event.getEventType());
             String creatorUsername;
@@ -123,6 +123,8 @@ public class NotificationHelper {
         } catch (NoSuchElementException e) {
             System.err.println(menuTranslation.getTranslation("nobodyRegisteredToYourEvents"));
         }
+
+
     }
 
     /**
@@ -131,7 +133,7 @@ public class NotificationHelper {
      * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    public Notification closedEventNotification(UUID recipientID, String recipientUsername, double eventCost) {
+    private Notification closedEventNotification(UUID recipientID, String recipientUsername, double eventCost) {
         StringBuilder sb = new StringBuilder();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm ");
 
@@ -159,7 +161,7 @@ public class NotificationHelper {
      * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    public Notification failedEventNotification(UUID recipientID, String recipientUsername) {
+    private Notification failedEventNotification(UUID recipientID, String recipientUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
@@ -175,7 +177,7 @@ public class NotificationHelper {
      * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    public Notification withdrawnEventNotification(UUID recipientID, String recipientUsername) {
+    private Notification withdrawnEventNotification(UUID recipientID, String recipientUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
@@ -191,7 +193,7 @@ public class NotificationHelper {
      * @param recipientUsername String with username of the user to send the notification to
      * @return Notification object with all the values instantiated
      */
-    public Notification newEventFavoriteCategoryNotification(UUID recipientID, String recipientUsername) {
+    private Notification newEventFavoriteCategoryNotification(UUID recipientID, String recipientUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
@@ -208,7 +210,7 @@ public class NotificationHelper {
      * @param senderUsername String with username of the user which has created the event
      * @return Notification object with all the values instantiated
      */
-    public Notification newInviteNotification(UUID recipientID, String recipientUsername, String senderUsername) {
+    private Notification newInviteNotification(UUID recipientID, String recipientUsername, String senderUsername) {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;

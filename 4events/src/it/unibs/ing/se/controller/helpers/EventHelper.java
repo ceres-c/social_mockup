@@ -9,12 +9,15 @@ import it.unibs.ing.se.view.WantedOptionalCostView;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 public class EventHelper {
     private Connector dbConnection;
     protected JsonTranslator menuTranslation;
+    NotificationHelper notHelper;
 
     public EventHelper() {
         this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
@@ -96,10 +99,12 @@ public class EventHelper {
     }
 
     public void updateStatus(UUID eventID) {
-        Event event;
+        Event event = null;
+        Event.State oldState = null;
         boolean eventUpdated = false;
         try {
             event = dbConnection.getEvent(eventID);
+            oldState = event.getCurrentState();
             eventUpdated = event.updateState(LocalDateTime.now());
             dbConnection.updateEventState(eventID, event.getCurrentState());
         } catch (SQLException e) {
@@ -107,11 +112,37 @@ public class EventHelper {
             System.exit(1);
         }
 
-        if (eventUpdated) {
-            NotificationHelper notHelper = new NotificationHelper(eventID);
+        if (eventUpdated &&
+                !(oldState == Event.State.CLOSED && event.getCurrentState() == Event.State.OPEN)) {
+            // No need to throw notifications if the transition was CLOSED -> OPEN since users already
+            // received notifications when the event reached OPEN state first
+            notHelper = new NotificationHelper(eventID);
             notHelper.send();
         }
     }
 
-    // TODO event withdraw + notification
+    /**
+     * This method iterates over all the active events in the database and check if any needs to be updated.
+     * If so it proceeds to update it and save it back into the database with its updated status.
+     * If the new status require to send notifications to user it does so.
+     * @throws SQLException If a database access error occurs
+     */
+    public void updateAllEvents() {
+        if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
+
+        ArrayList<UUID> activeEventsID = null;
+        try {
+            activeEventsID = dbConnection.getActiveEvents();
+        } catch (SQLException e) {
+            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.exit(1);
+        } catch (NoSuchElementException e) {
+            // The database is empty
+            return;
+        }
+
+        for (UUID eventID : activeEventsID) {
+            updateStatus(eventID);
+        }
+    }
 }

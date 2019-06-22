@@ -3,10 +3,7 @@ package it.unibs.ing.se.controller;
 import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonTranslator;
 import it.unibs.ing.se.controller.helpers.LoginHelper;
-import it.unibs.ing.se.view.DashboardView;
-import it.unibs.ing.se.view.NewEventView;
-import it.unibs.ing.se.view.PublicEventInfoView;
-import it.unibs.ing.se.view.PublicEventsView;
+import it.unibs.ing.se.view.*;
 import it.unibs.ing.se.view.commands.DashboardCommand;
 import it.unibs.ing.se.view.commands.EventCommand;
 import it.unibs.ing.se.view.commands.MainCommand;
@@ -71,7 +68,8 @@ public class MainMenuController implements ControllerInterface<MainCommand> {
                 newEventController.perform(userInput);
                 break;
             case HELP:
-                // TODO help
+                HelpView helpView = new HelpView();
+                helpView.print();
                 break;
             case QUIT:
                 Connector.getInstance().closeDb();

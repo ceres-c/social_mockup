@@ -79,7 +79,7 @@ public class PersonalNotificationView implements PrintableInterface<ArrayList<UU
             return null;
         }
         for (Integer number : userNumbers)
-            if (number - 1 > notificationsIDs.size() || number - 1 < 0) { // Notifications are printed with 1 based index
+            if (number - 1 >= notificationsIDs.size() || number - 1 < 0) { // Notifications are printed with 1 based index
                 System.err.println(menuTranslation.getTranslation("invalidUserSelection"));
                 return null; // out of bound
             } else {

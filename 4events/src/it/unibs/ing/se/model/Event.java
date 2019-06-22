@@ -182,13 +182,6 @@ public abstract class Event implements LegalObject, ReflectionInterface {
         return registeredUsers.remove(userID);
     }
 
-    /**
-     * This method empties out registeredUsers array and has to be used only if the Event enters withdrawn state
-     */
-    public void deregisterAll() {
-        this.registeredUsers = new ArrayList<UUID>();
-    }
-
     public State getCurrentState() { return currentState; }
 
     public String getCurrentStateAsString() { return this.currentState.name(); }
@@ -283,7 +276,7 @@ public abstract class Event implements LegalObject, ReflectionInterface {
                         this.currentState = State.ENDED;
                         return true;
                     }
-                } else if (duration == null) {
+                } else {
                     if (currentDateTime.isAfter(endDate)) {
                         this.currentState = State.ENDED;
                         return true;
@@ -393,7 +386,7 @@ public abstract class Event implements LegalObject, ReflectionInterface {
      * @return boolean:
      *      - True if legal
      * @throws IllegalStateException if user input isn't legal
-     * @param currentDate
+     * @param currentDate Reference date to check if deadlines are legal
      */
     public boolean isLegal(LocalDateTime currentDate) throws IllegalStateException {
 
