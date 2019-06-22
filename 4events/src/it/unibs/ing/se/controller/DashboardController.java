@@ -10,11 +10,11 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class DashboardController implements ControllerInterface<DashboardCommand>  {
-    private JsonTranslator menuTranslation;
+    private JsonTranslator translation;
     private UUID currentUserID;
 
     DashboardController(UUID currentUserID) {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         this.currentUserID = currentUserID;
     }
 
@@ -24,7 +24,7 @@ public class DashboardController implements ControllerInterface<DashboardCommand
         EventCommand userCommand;
         switch (selection) {
             case INVALID:
-                System.err.println(menuTranslation.getTranslation("invalidUserSelection"));
+                System.err.println(translation.getTranslation("invalidUserSelection"));
                 break;
             case USER_PROFILE:
                 UserProfileView userProfileView = new UserProfileView(currentUserID);

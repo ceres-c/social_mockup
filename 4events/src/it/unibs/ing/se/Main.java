@@ -20,19 +20,19 @@ public class Main {
         Path configJsonPath = Paths.get(CONFIG_JSON_PATH);
         JsonConfigReader config = new JsonConfigReader(configJsonPath.toString());
 
-        JsonTranslator menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        JsonTranslator translation = JsonTranslator.getInstance();
 
         try { // Initializes the Connector for future usage
             Connector.getInstance(config.getDBURL(), config.getDBUser(), config.getDBPassword());
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
 
         EventHelper eHelper = new EventHelper();
         eHelper.updateAllEvents();
 
-        System.out.println(menuTranslation.getTranslation("welcome"));
+        System.out.println(translation.getTranslation("welcome"));
 
         MainMenuController mainController = new MainMenuController();
         mainController.loginAndSet();

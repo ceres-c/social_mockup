@@ -13,7 +13,7 @@ public class RegisteredEventInfoView extends AbstractEventDetailsView<EventComma
     public EventCommand parseInput() {
         Character userInput;
         do {
-            userInput = InputManager.inputChar(menuTranslation.getTranslation("eventDeregister"), true);
+            userInput = InputManager.inputChar(translation.getTranslation("eventDeregister"), true);
             if (userInput != null && userInput != 'S' && userInput != 'N')
                 userInput = null;
         } while (userInput == null);

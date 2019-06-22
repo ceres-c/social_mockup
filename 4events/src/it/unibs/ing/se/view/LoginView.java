@@ -1,21 +1,20 @@
 package it.unibs.ing.se.view;
 
-import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonTranslator;
 import it.unibs.ing.se.controller.helpers.CryptoHelper;
 
 import java.util.ArrayList;
 
 public class LoginView implements PrintableInterface<ArrayList<String>> {
-    JsonTranslator menuTranslation;
+    JsonTranslator translation;
 
     public LoginView() {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
     }
 
     @Override
     public void print() {
-        System.out.println(menuTranslation.getTranslation("loginPrompt"));
+        System.out.println(translation.getTranslation("loginPrompt"));
     }
 
     @Override

@@ -11,15 +11,13 @@ import java.util.Map;
 import java.util.UUID;
 
 abstract public class AbstractEventDetailsView<K> implements PrintableInterface<K> {
-    protected JsonTranslator menuTranslation;
-    protected JsonTranslator eventTranslation;
+    protected JsonTranslator translation;
     protected Connector dbConnection;
     protected UUID eventID;
 
     public AbstractEventDetailsView(UUID eventID) {
         dbConnection = Connector.getInstance();
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
-        this.eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         this.eventID = eventID;
     }
 
@@ -33,7 +31,7 @@ abstract public class AbstractEventDetailsView<K> implements PrintableInterface<
         try {
             event = dbConnection.getEvent(eventID);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
 
@@ -51,15 +49,15 @@ abstract public class AbstractEventDetailsView<K> implements PrintableInterface<
     private String detailedDescription (Event event) {
         String creatorUsername;
         StringBuilder sb = new StringBuilder();
-        sb.append(eventTranslation.getName(event.getEventType())).append('\n');
+        sb.append(translation.getName(event.getEventType())).append('\n');
         try {
             creatorUsername = dbConnection.getUsername(event.getCreatorID());
         } catch (SQLException | IllegalArgumentException e) {
             creatorUsername = "Error fetching username";
         }
-        sb.append(eventTranslation.getName("creator")).append(": ").append(creatorUsername).append('\t');
-        String eventState = eventTranslation.getTranslation(event.getCurrentState().name());
-        sb.append(eventTranslation.getName("state")).append(": ").append(eventState).append('\n');
+        sb.append(translation.getName("creator")).append(": ").append(creatorUsername).append('\t');
+        String eventState = translation.getTranslation(event.getCurrentState().name());
+        sb.append(translation.getName("state")).append(": ").append(eventState).append('\n');
 
         Iterator iterator;
         LinkedHashMap<String, Object> setAttributes = event.getNonNullAttributesWithValue(); // Map with all currently valid attributes
@@ -67,7 +65,7 @@ abstract public class AbstractEventDetailsView<K> implements PrintableInterface<
 
         while(iterator.hasNext()) {
             Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
-            sb.append(eventTranslation.getName((String) entry.getKey())).append(": ").append(entry.getValue()).append("\n");
+            sb.append(translation.getName((String) entry.getKey())).append(": ").append(entry.getValue()).append("\n");
         }
         return sb.toString();
     }

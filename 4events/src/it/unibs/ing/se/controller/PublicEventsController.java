@@ -1,6 +1,5 @@
 package it.unibs.ing.se.controller;
 
-import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonTranslator;
 import it.unibs.ing.se.controller.helpers.EventHelper;
 import it.unibs.ing.se.view.commands.EventCommand;
@@ -8,12 +7,12 @@ import it.unibs.ing.se.view.commands.EventCommand;
 import java.util.UUID;
 
 public class PublicEventsController implements ControllerInterface<EventCommand> {
-    protected JsonTranslator menuTranslation;
+    protected JsonTranslator translation;
     private UUID eventID;
     private UUID userID;
 
     PublicEventsController(UUID eventID, UUID userID) {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         this.eventID = eventID;
         this.userID = userID;
     }

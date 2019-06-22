@@ -13,7 +13,7 @@ public class PublicEventInfoView extends AbstractEventDetailsView<EventCommand> 
     public EventCommand parseInput() {
         Character userInput;
         do {
-            userInput = InputManager.inputChar(menuTranslation.getTranslation("eventRegistration"), true);
+            userInput = InputManager.inputChar(translation.getTranslation("eventRegistration"), true);
             if (userInput != null && userInput != 'S' && userInput != 'N')
                 userInput = null;
         } while (userInput == null);

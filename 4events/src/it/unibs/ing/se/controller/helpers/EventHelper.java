@@ -16,11 +16,10 @@ import java.util.UUID;
 
 public class EventHelper {
     private Connector dbConnection;
-    protected JsonTranslator menuTranslation;
-    NotificationHelper notHelper;
+    protected JsonTranslator translation;
 
     public EventHelper() {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         dbConnection = Connector.getInstance();
     }
 
@@ -32,7 +31,7 @@ public class EventHelper {
             event = dbConnection.getEvent(eventID);
             currentUser = dbConnection.getUser(userID);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
 
@@ -40,14 +39,14 @@ public class EventHelper {
             canRegister = event.register(currentUser);
         } catch (IllegalArgumentException e) {
             if (e.getMessage().contains("is already registered")) {
-                System.err.println(menuTranslation.getTranslation("userAlreadyRegisteredToEvent"));
+                System.err.println(translation.getTranslation("userAlreadyRegisteredToEvent"));
             } else if (e.getMessage().contains("sex is not allowed")) {
-                System.err.println(menuTranslation.getTranslation("eventRegistrationSexMismatch"));
+                System.err.println(translation.getTranslation("eventRegistrationSexMismatch"));
             } else if (e.getMessage().contains("age is not allowed")) {
-                System.err.println(menuTranslation.getTranslation("eventRegistrationAgeMismatch"));
+                System.err.println(translation.getTranslation("eventRegistrationAgeMismatch"));
             }
         } catch (IllegalStateException e) {
-            System.err.println(menuTranslation.getTranslation("eventRegistrationMaximumReached"));
+            System.err.println(translation.getTranslation("eventRegistrationMaximumReached"));
         }
 
         if (canRegister) {
@@ -59,7 +58,7 @@ public class EventHelper {
                 dbConnection.insertOptionalCosts(selectedCosts, eventID, userID);
                 dbConnection.updateEventRegistrations(event);
             } catch (SQLException e) {
-                System.err.println(menuTranslation.getTranslation("SQLError"));
+                System.err.println(translation.getTranslation("SQLError"));
                 System.exit(1);
             }
         }
@@ -72,19 +71,19 @@ public class EventHelper {
         try {
             event = dbConnection.getEvent(eventID);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
         try {
             event.deregister(userID, LocalDateTime.now());
         } catch (IllegalStateException | IllegalArgumentException e) {
-            System.err.println(menuTranslation.getTranslation("errorEventDeregistration"));
+            System.err.println(translation.getTranslation("errorEventDeregistration"));
             System.err.println(e.getMessage());
         }
         try {
             dbConnection.updateEventRegistrations(event);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
     }
@@ -108,7 +107,7 @@ public class EventHelper {
             eventUpdated = event.updateState(LocalDateTime.now());
             dbConnection.updateEventState(eventID, event.getCurrentState());
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
 
@@ -116,7 +115,7 @@ public class EventHelper {
                 !(oldState == Event.State.CLOSED && event.getCurrentState() == Event.State.OPEN)) {
             // No need to throw notifications if the transition was CLOSED -> OPEN since users already
             // received notifications when the event reached OPEN state first
-            notHelper = new NotificationHelper(eventID);
+            NotificationHelper notHelper = new NotificationHelper(eventID);
             notHelper.send();
         }
     }
@@ -134,7 +133,7 @@ public class EventHelper {
         try {
             activeEventsID = dbConnection.getActiveEvents();
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         } catch (NoSuchElementException e) {
             // The database is empty

@@ -12,17 +12,15 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class UserProfileView implements PrintableInterface<UserCore> {
-    private JsonTranslator menuTranslation;
-    private JsonTranslator eventTranslation;
+    private JsonTranslator translation;
     private User currentUser;
 
     public UserProfileView(UUID currentUserID) {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
-        this.eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         try {
             currentUser = Connector.getInstance().getUser(currentUserID);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
     }
@@ -31,17 +29,17 @@ public class UserProfileView implements PrintableInterface<UserCore> {
     public void print() {
         StringBuilder sb = new StringBuilder();
         sb.append("Username: ").append(currentUser.getUsername()).append('\n');
-        sb.append(menuTranslation.getTranslation("genderInput")).append(": ").append(currentUser.getGender());
+        sb.append(translation.getTranslation("genderInput")).append(": ").append(currentUser.getGender());
         if (currentUser.getAge() != 0) {
-            sb.append('\n').append(menuTranslation.getTranslation("ageInput")).append(": ").append(currentUser.getAge());
+            sb.append('\n').append(translation.getTranslation("ageInput")).append(": ").append(currentUser.getAge());
         }
         String[] favoriteCategories = currentUser.getFavoriteCategories();
         if (favoriteCategories != null) {
-            sb.append('\n').append(menuTranslation.getTranslation("favoriteCategoriesPrint")).append(":");
+            sb.append('\n').append(translation.getTranslation("favoriteCategoriesPrint")).append(":");
             for (int i = 0; i < favoriteCategories.length; i++) {
                 sb.append('\n').append(i + 1).append(") ");
-                sb.append(eventTranslation.getName(favoriteCategories[i])).append("\n\t");
-                sb.append(eventTranslation.getDescr(favoriteCategories[i]));
+                sb.append(translation.getName(favoriteCategories[i])).append("\n\t");
+                sb.append(translation.getDescr(favoriteCategories[i]));
             }
         }
         System.out.println(sb);
@@ -58,16 +56,16 @@ public class UserProfileView implements PrintableInterface<UserCore> {
 
         Character userInput;
         do {
-            userInput = InputManager.inputChar(menuTranslation.getTranslation("ageChange"), true);
+            userInput = InputManager.inputChar(translation.getTranslation("ageChange"), true);
             if (userInput != null && userInput != 'S' && userInput != 'N')
                 userInput = null;
         } while (userInput == null);
         if (userInput == 'S') {
-            age = InputManager.inputInteger(menuTranslation.getTranslation("ageInput"), true);
+            age = InputManager.inputInteger(translation.getTranslation("ageInput"), true);
             age = (age == null ? 0 : age); // age defaults to 0
         }
         do {
-            userInput = InputManager.inputChar(menuTranslation.getTranslation("favoriteCategoriesChange"), true);
+            userInput = InputManager.inputChar(translation.getTranslation("favoriteCategoriesChange"), true);
             if (userInput != null && userInput != 'S' && userInput != 'N')
                 userInput = null;
         } while (userInput == null);

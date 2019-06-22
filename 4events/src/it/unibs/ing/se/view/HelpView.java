@@ -12,21 +12,21 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class HelpView {
-    JsonTranslator eventTranslation;
-    ArrayList<String> categories;
+    private JsonTranslator translation;
+    private ArrayList<String> categories;
 
     public HelpView() {
-        this.eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         try {
             categories = Connector.getInstance().getCategories();
         } catch (SQLException e) {
-            System.err.println(eventTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
     }
 
     public void print() {
-        System.out.println(eventTranslation.getTranslation("categoryList"));
+        System.out.println(translation.getTranslation("categoryList"));
 
         EventFactory eFactory = new EventFactory();
         Event event;
@@ -37,7 +37,7 @@ public class HelpView {
             internalCatName = categories.get(i);
             maxLength = 0;
 
-            System.out.println(eventTranslation.getName(internalCatName) + " - " + eventTranslation.getDescr(internalCatName));
+            System.out.println(translation.getName(internalCatName) + " - " + translation.getDescr(internalCatName));
 
             event = eFactory.createEvent(internalCatName);
 
@@ -48,7 +48,7 @@ public class HelpView {
             while(iterator.hasNext()) {
                 Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
 
-                int length = eventTranslation.getName((String)entry.getKey()).length();
+                int length = translation.getName((String)entry.getKey()).length();
                 if (length > maxLength)
                     maxLength = length; // ...find the longest
             }
@@ -62,12 +62,12 @@ public class HelpView {
                 String field = (String)entry.getKey();
 
                 outputBuffer.append("  ");
-                outputBuffer.append(eventTranslation.getName(field));
+                outputBuffer.append(translation.getName(field));
                 outputBuffer.append(':');
-                for (int in = 0; in < (maxLength - eventTranslation.getName(field).length()); in++) { // Wonderful onelined math...
+                for (int in = 0; in < (maxLength - translation.getName(field).length()); in++) { // Wonderful onelined math...
                     outputBuffer.append(" "); // ...for spacing purposes
                 }
-                outputBuffer.append(eventTranslation.getDescr(field)).append('\n');
+                outputBuffer.append(translation.getDescr(field)).append('\n');
             }
 
             System.out.println(outputBuffer);

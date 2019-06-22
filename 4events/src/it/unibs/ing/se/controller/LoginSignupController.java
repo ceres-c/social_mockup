@@ -11,15 +11,15 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class LoginSignupController {
-    private JsonTranslator menuTranslation;
+    private JsonTranslator translation;
     private Connector dbConnection;
 
     public LoginSignupController() {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         try {
             dbConnection = Connector.getInstance();
         } catch (IllegalStateException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
     }
@@ -32,10 +32,10 @@ public class LoginSignupController {
         try {
             userID = dbConnection.login(username, hashedPassword);
         } catch (IllegalArgumentException e) {
-            System.err.println(menuTranslation.getTranslation("loginError"));
+            System.err.println(translation.getTranslation("loginError"));
             return null; // CHECK FOR NULL-OBJECT!
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
         return userID;
@@ -52,10 +52,10 @@ public class LoginSignupController {
         try {
             dbConnection.insertUser(newUser);
         } catch (IllegalArgumentException e) {
-            System.err.println(menuTranslation.getTranslation("duplicateUser"));
+            System.err.println(translation.getTranslation("duplicateUser"));
             return null; // CHECK FOR NULL-OBJECT!
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
         return newUser.getUserID();

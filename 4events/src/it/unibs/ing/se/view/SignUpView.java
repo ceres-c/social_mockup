@@ -8,17 +8,17 @@ import it.unibs.ing.se.model.fields.Sex;
 import java.util.ArrayList;
 
 public class SignUpView implements PrintableInterface<UserCore> {
-    private JsonTranslator menuTranslation;
+    private JsonTranslator translation;
     private FavoriteCategoriesView favoriteCategoriesView;
 
     public SignUpView() {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         favoriteCategoriesView = new FavoriteCategoriesView();
     }
 
     @Override
     public void print() {
-        System.out.println(menuTranslation.getTranslation("signUpPrompt"));
+        System.out.println(translation.getTranslation("signUpPrompt"));
     }
 
     @Override
@@ -34,8 +34,8 @@ public class SignUpView implements PrintableInterface<UserCore> {
         String hashedPassword = CryptoHelper.SHA512PasswordHash(password, salt);
         java.util.Arrays.fill(password, ' '); // It will still be somewhere in memory due to Java's Almighty Garbage Collector (TM), but at least we tried.
 
-        while ((gender = Sex.sexInput(menuTranslation.getTranslation("genderInput"), true)) == null);
-        age = InputManager.inputInteger(menuTranslation.getTranslation("ageInput"), true);
+        while ((gender = Sex.sexInput(translation.getTranslation("genderInput"), true)) == null);
+        age = InputManager.inputInteger(translation.getTranslation("ageInput"), true);
         age = (age == null ? 0 : age); // age defaults to 0
 
         favoriteCategoriesView.print();

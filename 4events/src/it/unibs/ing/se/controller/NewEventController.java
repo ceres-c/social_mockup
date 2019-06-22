@@ -19,11 +19,11 @@ import java.util.UUID;
 
 public class NewEventController implements ControllerInterface<EventInput> {
     private UUID userID;
-    private JsonTranslator menuTranslation;
+    private JsonTranslator translation;
     private Connector dbConnection;
 
     NewEventController (UUID userID) {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         dbConnection = Connector.getInstance();
         this.userID = userID;
     }
@@ -42,7 +42,7 @@ public class NewEventController implements ControllerInterface<EventInput> {
         try {
             newEvent.isLegal(LocalDateTime.now());
         } catch (IllegalStateException e) {
-            System.err.println(menuTranslation.getTranslation("eventNotLegal"));
+            System.err.println(translation.getTranslation("eventNotLegal"));
             System.err.println(e.getMessage());
             return;
         }
@@ -58,7 +58,7 @@ public class NewEventController implements ControllerInterface<EventInput> {
         try {
             dbConnection.insertEvent(newEvent);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
 

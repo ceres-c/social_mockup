@@ -9,7 +9,7 @@ public class PublicEventsView extends AbstractEventsView {
         try {
             eventIDs = dbConnection.getOpenEvents();
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         } catch (NoSuchElementException e) {
             eventIDs = null;

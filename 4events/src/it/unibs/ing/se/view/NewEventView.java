@@ -12,17 +12,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class NewEventView implements PrintableInterface<EventInput> {
-    private JsonTranslator menuTranslation;
-    private JsonTranslator eventTranslation;
+    private JsonTranslator translation;
     private ArrayList<String> categories;
 
     public NewEventView() {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
-        this.eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         try {
             this.categories = Connector.getInstance().getCategories();
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
     }
@@ -30,15 +28,15 @@ public class NewEventView implements PrintableInterface<EventInput> {
     @Override
     public void print() {
         StringBuilder sb = new StringBuilder();
-        sb.append(menuTranslation.getTranslation("categoryList")).append('\n');
+        sb.append(translation.getTranslation("categoryList")).append('\n');
 
         String cat;
         String catName;
         String catDescr;
         for (int i = 0; i < categories.size(); i++) {
             cat = categories.get(i);
-            catName = eventTranslation.getName(cat);
-            catDescr = eventTranslation.getDescr(cat);
+            catName = translation.getName(cat);
+            catDescr = translation.getDescr(cat);
             // Numbers printed below will be 1 based, so to select the right category user input hast to be decremented by one
             sb.append(i + 1).append(") ").append(catName).append("\n     ");
             sb.append(catDescr).append('\n');
@@ -49,9 +47,9 @@ public class NewEventView implements PrintableInterface<EventInput> {
 
     @Override
     public EventInput parseInput() {
-        Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
+        Integer userSelection = InputManager.inputInteger(translation.getTranslation("userSelection"), false);
         if (userSelection == null || userSelection <= 0 || userSelection > categories.size()) {
-            System.out.println(menuTranslation.getTranslation("invalidUserSelection"));
+            System.out.println(translation.getTranslation("invalidUserSelection"));
             return null;
         }
 
@@ -67,7 +65,7 @@ public class NewEventView implements PrintableInterface<EventInput> {
 
             boolean validUserInput = false;
             do {
-                String inputDescription = eventTranslation.getName((String) entry.getKey());
+                String inputDescription = translation.getName((String) entry.getKey());
                 Object userInput = InputManager.genericInput(inputDescription, (Class) entry.getValue(), true);
                 if (userInput == null) {
                     validUserInput = event.isOptional((String) entry.getKey());

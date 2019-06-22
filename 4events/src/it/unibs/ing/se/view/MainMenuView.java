@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 public class MainMenuView implements PrintableInterface<MainCommand> {
-    private JsonTranslator menuTranslation;
+    private JsonTranslator translation;
     private Connector dbConnection;
     private UUID currentUserID;
     private MainCommand[] mainCommands = MainCommand.values();
@@ -18,7 +18,7 @@ public class MainMenuView implements PrintableInterface<MainCommand> {
      * @param currentUserID User object of current user
      */
     public MainMenuView(UUID currentUserID) {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         this.dbConnection = dbConnection = Connector.getInstance();
         this.currentUserID = currentUserID;
     }
@@ -33,17 +33,17 @@ public class MainMenuView implements PrintableInterface<MainCommand> {
             username = this.dbConnection.getUsername(currentUserID);
             unreadNotificationsNum = dbConnection.getUnreadNotificationsCountByUser(currentUserID);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
 
-        String header = String.format(menuTranslation.getTranslation("mainMenuHeader"), username, unreadNotificationsNum);
+        String header = String.format(translation.getTranslation("mainMenuHeader"), username, unreadNotificationsNum);
         System.out.println(header);
 
         StringBuilder sb = new StringBuilder();
         for (int i = 1; i < mainCommands.length; i++) {
             sb.append(i).append(") ");
-            sb.append(menuTranslation.getTranslation(mainCommands[i].name())).append('\n');
+            sb.append(translation.getTranslation(mainCommands[i].name())).append('\n');
         }
         System.out.print(sb); // No trailing newline as it was already added on above line
     }
@@ -53,7 +53,7 @@ public class MainMenuView implements PrintableInterface<MainCommand> {
      * @return MainCommand object selected by the user
      */
     public MainCommand parseInput() {
-        Integer userSelection = InputManager.inputInteger(menuTranslation.getTranslation("userSelection"), false);
+        Integer userSelection = InputManager.inputInteger(translation.getTranslation("userSelection"), false);
 
         if (userSelection == null || userSelection < 0 || userSelection > mainCommands.length - 1)
             return MainCommand.INVALID;

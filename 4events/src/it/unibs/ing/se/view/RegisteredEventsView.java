@@ -16,7 +16,7 @@ public class RegisteredEventsView extends AbstractEventsView {
         try {
             eventIDs = dbConnection.getEventsByRegistration(currentUserID);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         } catch (NoSuchElementException e) {
             eventIDs = null;

@@ -13,18 +13,16 @@ import java.util.UUID;
 
 public class NotificationHelper {
     private Connector dbConnection;
-    private JsonTranslator menuTranslation;
-    private JsonTranslator eventTranslation;
+    private JsonTranslator translation;
     private Event event;
 
     public NotificationHelper(UUID eventID) {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
-        this.eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         dbConnection = Connector.getInstance();
         try {
             event = dbConnection.getEvent(eventID);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
     }
@@ -45,10 +43,10 @@ public class NotificationHelper {
                         dbConnection.insertNotification(newEventNotification);
                     }
                 } catch (SQLException e) {
-                    System.err.println(menuTranslation.getTranslation("SQLError"));
+                    System.err.println(translation.getTranslation("SQLError"));
                     System.exit(1);
                 } catch (NoSuchElementException e) {
-                    System.err.println(menuTranslation.getTranslation("nobodyInterestedInThisCategory"));
+                    System.err.println(translation.getTranslation("nobodyInterestedInThisCategory"));
                 }
                 break;
             case WITHDRAWN:
@@ -58,7 +56,7 @@ public class NotificationHelper {
                         Notification newNotification = withdrawnEventNotification(recipientID, dbConnection.getUsername(recipientID));
                         dbConnection.insertNotification(newNotification);
                     } catch (SQLException e) {
-                        System.err.println(menuTranslation.getTranslation("SQLError"));
+                        System.err.println(translation.getTranslation("SQLError"));
                         System.exit(1);
                     }
                 }
@@ -84,7 +82,7 @@ public class NotificationHelper {
                         dbConnection.insertNotification(newNotification);
                     }
                 } catch (SQLException e) {
-                    System.err.println(menuTranslation.getTranslation("SQLError"));
+                    System.err.println(translation.getTranslation("SQLError"));
                     System.exit(1);
                 }
                 break;
@@ -101,7 +99,7 @@ public class NotificationHelper {
                         dbConnection.insertNotification(newNotification);
                     }
                 } catch (SQLException e) {
-                    System.err.println(menuTranslation.getTranslation("SQLError"));
+                    System.err.println(translation.getTranslation("SQLError"));
                     System.exit(1);
                 }
                 break;
@@ -118,10 +116,10 @@ public class NotificationHelper {
                 dbConnection.insertNotification(newEventNotification);
             }
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         } catch (NoSuchElementException e) {
-            System.err.println(menuTranslation.getTranslation("nobodyRegisteredToYourEvents"));
+            System.err.println(translation.getTranslation("nobodyRegisteredToYourEvents"));
         }
 
 
@@ -140,16 +138,16 @@ public class NotificationHelper {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
-        String title = String.format(eventTranslation.getTranslation("eventSuccessTitle"), event.title);
+        String title = String.format(translation.getTranslation("eventSuccessTitle"), event.title);
 
-        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentIntro"), recipientUsername)).append('\n');
-        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentStartDate"), event.startDate.format(dateFormatter)));
+        sb.append(String.format(translation.getTranslation("eventSuccessContentIntro"), recipientUsername)).append('\n');
+        sb.append(String.format(translation.getTranslation("eventSuccessContentStartDate"), event.startDate.format(dateFormatter)));
         if (event.endDate != null)
-            sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentEndDate"), event.endDate.format(dateFormatter)));
+            sb.append(String.format(translation.getTranslation("eventSuccessContentEndDate"), event.endDate.format(dateFormatter)));
         if (event.endDate != null)
-            sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentDuration"), event.duration).replace("PT", ""));
-        sb.append('\n').append(String.format(eventTranslation.getTranslation("eventSuccessContentCost"), eventCost)).append('\n');
-        sb.append(String.format(eventTranslation.getTranslation("eventSuccessContentConclusion"), event.location));
+            sb.append(String.format(translation.getTranslation("eventSuccessContentDuration"), event.duration).replace("PT", ""));
+        sb.append('\n').append(String.format(translation.getTranslation("eventSuccessContentCost"), eventCost)).append('\n');
+        sb.append(String.format(translation.getTranslation("eventSuccessContentConclusion"), event.location));
         String content = sb.toString();
 
         return new Notification(notificationID, eventID, recipientID, read, title, content);
@@ -165,8 +163,8 @@ public class NotificationHelper {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
-        String title = String.format(eventTranslation.getTranslation("eventFailTitle"), event.title);
-        String content = String.format(eventTranslation.getTranslation("eventFailContent"), recipientUsername);
+        String title = String.format(translation.getTranslation("eventFailTitle"), event.title);
+        String content = String.format(translation.getTranslation("eventFailContent"), recipientUsername);
 
         return new Notification(notificationID, eventID, recipientID, read, title, content);
     }
@@ -181,8 +179,8 @@ public class NotificationHelper {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
-        String title = String.format(eventTranslation.getTranslation("eventWithdrawnTitle"), event.title);
-        String content = String.format(eventTranslation.getTranslation("eventWithdrawnContent"), recipientUsername);
+        String title = String.format(translation.getTranslation("eventWithdrawnTitle"), event.title);
+        String content = String.format(translation.getTranslation("eventWithdrawnContent"), recipientUsername);
 
         return new Notification(notificationID, eventID, recipientID, read, title, content);
     }
@@ -197,8 +195,8 @@ public class NotificationHelper {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
-        String title = eventTranslation.getTranslation("eventFavoriteCategoryTitle");
-        String content = String.format(eventTranslation.getTranslation("eventFavoriteCategoryContent"), recipientUsername, event.title);
+        String title = translation.getTranslation("eventFavoriteCategoryTitle");
+        String content = String.format(translation.getTranslation("eventFavoriteCategoryContent"), recipientUsername, event.title);
 
         return new Notification(notificationID, eventID, recipientID, read, title, content);
     }
@@ -214,8 +212,8 @@ public class NotificationHelper {
         UUID notificationID = UUID.randomUUID();
         UUID eventID = event.getEventID();
         boolean read = false;
-        String title = eventTranslation.getTranslation("eventInviteTitle");
-        String content = String.format(eventTranslation.getTranslation("eventInviteContent"), recipientUsername, senderUsername, event.title);
+        String title = translation.getTranslation("eventInviteTitle");
+        String content = String.format(translation.getTranslation("eventInviteContent"), recipientUsername, senderUsername, event.title);
 
         return new Notification(notificationID, eventID, recipientID, read, title, content);
     }

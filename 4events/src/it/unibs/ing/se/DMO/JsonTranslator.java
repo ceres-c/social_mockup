@@ -11,33 +11,48 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Nested class that's used to store the JSONObject representation of a translation on disk.
+ * Singleton class used to store the JSONObject representation of a translation on disk.
  */
 public class JsonTranslator {
-    public static final String MENU_JSON_PATH = "res/IT_MenuDescr.json";
-    public static final String EVENT_JSON_PATH = "res/IT_EventDescr.json";
-    JSONObject jsonContent;
+    private static final String JSON_PATH = "res/IT.json";
+    private JSONObject jsonContent;
+    private static JsonTranslator singleInstance;
 
     /**
-     * Instantiate a jsonTranslator object with the given json file
-     * @param jsonPath Path to the json file to load
+     * Instantiate a jsonTranslator object with translation json file
      */
-    public JsonTranslator(String jsonPath) {
+    private JsonTranslator() {
 
-        String absPath = "/" + jsonPath; // Because java is fun and refers local files with a slash even on windows systems
+        String absPath = "/" + JSON_PATH; // Because java is fun and refers local files with a slash even on windows systems
         // Ask me about how I found that out.
 
         InputStream inputStream = getClass().getResourceAsStream(absPath); // Tries to open the json as a resource
         if (inputStream == null) // If getResourceAsStream returns null, we're not running in a jar
             try {
-                Path localPath = Paths.get(jsonPath); // Adapt the path to current OS
+                Path localPath = Paths.get(JSON_PATH); // Adapt the path to current OS
                 inputStream = new FileInputStream(localPath.toString()); // Then we need to read the file from disk
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
 
+        if (inputStream == null) {
+            System.err.println("FATAL: Can't find json file " + JSON_PATH);
+            System.exit(1);
+        }
+
         JSONTokener tokener = new JSONTokener(inputStream);
         jsonContent = new JSONObject(tokener);
+    }
+
+    /**
+     * Instantiate a jsonTranslator object with translation json file
+     * @return JsonTranslator instance
+     */
+    public static JsonTranslator getInstance() {
+        if (singleInstance == null)
+            singleInstance = new JsonTranslator();
+
+        return singleInstance;
     }
 
     /**

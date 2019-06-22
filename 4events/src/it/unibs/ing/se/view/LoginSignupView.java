@@ -3,16 +3,16 @@ package it.unibs.ing.se.view;
 import it.unibs.ing.se.DMO.JsonTranslator;
 
 public class LoginSignupView implements PrintableInterface<Integer> {
-    JsonTranslator menuTranslation;
+    private JsonTranslator translation;
 
     // TODO method description
     public LoginSignupView() {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
     }
 
     @Override
     public void print() {
-        System.out.print(menuTranslation.getTranslation("loginOrSignup"));
+        System.out.print(translation.getTranslation("loginOrSignup"));
     }
 
     @Override

@@ -9,17 +9,17 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class PersonalNotificationView implements PrintableInterface<ArrayList<UUID>> {
-    private JsonTranslator menuTranslation;
+    private JsonTranslator translation;
     private Connector dbConnection;
     private ArrayList<UUID> notificationsIDs;
 
     public PersonalNotificationView(UUID currentUserID) {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         dbConnection = Connector.getInstance();
         try {
             notificationsIDs = dbConnection.getAllNotifications(currentUserID);
         } catch (SQLException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
     }
@@ -27,15 +27,15 @@ public class PersonalNotificationView implements PrintableInterface<ArrayList<UU
     @Override
     public void print() {
         if (notificationsIDs == null) {
-            System.out.println(menuTranslation.getTranslation("noPersonalNotifications"));
+            System.out.println(translation.getTranslation("noPersonalNotifications"));
             return;
         }
 
         StringBuilder sb = new StringBuilder(); // Lots of eye candy from here on
-        sb.append(menuTranslation.getTranslation("welcomeNotification")).append('\n');
+        sb.append(translation.getTranslation("welcomeNotification")).append('\n');
 
-        String notificationRead = menuTranslation.getTranslation("notificationRead");
-        String notificationUnread = menuTranslation.getTranslation("notificationUnread");
+        String notificationRead = translation.getTranslation("notificationRead");
+        String notificationUnread = translation.getTranslation("notificationUnread");
         int maxLen;
         if (notificationRead.length() > notificationUnread.length()) // Avoids fixed length to allow future translations
             maxLen = notificationRead.length();
@@ -50,7 +50,7 @@ public class PersonalNotificationView implements PrintableInterface<ArrayList<UU
             try {
                 notification = dbConnection.getNotification(notificationsIDs.get(i));
             } catch (SQLException e) {
-                System.err.println(menuTranslation.getTranslation("SQLError"));
+                System.err.println(translation.getTranslation("SQLError"));
                 System.exit(1);
             }
             String notificationStatus = notification.isRead() ? notificationRead : notificationUnread;
@@ -72,15 +72,15 @@ public class PersonalNotificationView implements PrintableInterface<ArrayList<UU
             return null;
         }
 
-        ArrayList<Integer> userNumbers = InputManager.inputNumberSequence(menuTranslation.getTranslation("selectNotificationToSetAsRead"), true);
+        ArrayList<Integer> userNumbers = InputManager.inputNumberSequence(translation.getTranslation("selectNotificationToSetAsRead"), true);
         ArrayList<UUID> selectedNotifications = new ArrayList<>();
         if (userNumbers == null) {
-            System.out.println(menuTranslation.getTranslation("invalidUserSelection"));
+            System.out.println(translation.getTranslation("invalidUserSelection"));
             return null;
         }
         for (Integer number : userNumbers)
             if (number - 1 >= notificationsIDs.size() || number - 1 < 0) { // Notifications are printed with 1 based index
-                System.err.println(menuTranslation.getTranslation("invalidUserSelection"));
+                System.err.println(translation.getTranslation("invalidUserSelection"));
                 return null; // out of bound
             } else {
                 selectedNotifications.add(notificationsIDs.get(number - 1));

@@ -7,23 +7,21 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class FavoriteCategoriesView implements PrintableInterface<ArrayList<String>> {
-    private JsonTranslator menuTranslation;
-    private JsonTranslator eventTranslation;
+    private JsonTranslator translation;
     private ArrayList<String> availableCategories;
 
     public FavoriteCategoriesView() {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
-        this.eventTranslation = new JsonTranslator(JsonTranslator.EVENT_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         try {
             Connector dbConnection = Connector.getInstance();
             try {
                 availableCategories = dbConnection.getCategories();
             } catch (SQLException e) {
-                System.err.println(menuTranslation.getTranslation("SQLError"));
+                System.err.println(translation.getTranslation("SQLError"));
                 System.exit(1);
             }
         } catch (IllegalStateException e) {
-            System.err.println(menuTranslation.getTranslation("SQLError"));
+            System.err.println(translation.getTranslation("SQLError"));
             System.exit(1);
         }
     }
@@ -35,10 +33,10 @@ public class FavoriteCategoriesView implements PrintableInterface<ArrayList<Stri
     public void print() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(menuTranslation.getTranslation("categoryList")).append('\n');
+        sb.append(translation.getTranslation("categoryList")).append('\n');
         for (int i = 0; i < availableCategories.size(); i++) {
             sb.append(i + 1).append(") ");
-            sb.append(eventTranslation.getName(availableCategories.get(i))).append('\n');
+            sb.append(translation.getName(availableCategories.get(i))).append('\n');
         }
         System.out.println(sb);
     }
@@ -49,15 +47,15 @@ public class FavoriteCategoriesView implements PrintableInterface<ArrayList<Stri
      * @return An ArrayList of String objects containing categories names as saved in database table "categories"
      */
     public ArrayList<String> parseInput () {
-        ArrayList<Integer> userNumbers = InputManager.inputNumberSequence(menuTranslation.getTranslation("favoriteCategoriesInput"), true);
+        ArrayList<Integer> userNumbers = InputManager.inputNumberSequence(translation.getTranslation("favoriteCategoriesInput"), true);
         ArrayList<String> selectedCategories = new ArrayList<>();
         if (userNumbers == null) {
-            System.out.println(menuTranslation.getTranslation("noFavoriteCategorySelected"));
+            System.out.println(translation.getTranslation("noFavoriteCategorySelected"));
             return null;
         }
         for (Integer number : userNumbers)
             if (number - 1 >= availableCategories.size() || number <= 0) { // Categories are printed starting from number 1
-                System.err.println(menuTranslation.getTranslation("invalidFavoriteCategorySelected"));
+                System.err.println(translation.getTranslation("invalidFavoriteCategorySelected"));
                 return null; // out of bound
             } else {
                 selectedCategories.add(availableCategories.get(number - 1));

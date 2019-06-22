@@ -3,10 +3,10 @@ package it.unibs.ing.se.view;
 import it.unibs.ing.se.DMO.JsonTranslator;
 
 public class NewEventInvitesView implements PrintableInterface<Boolean> {
-    protected JsonTranslator menuTranslation;
+    protected JsonTranslator translation;
 
     public NewEventInvitesView() {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
     }
 
     @Override
@@ -16,7 +16,7 @@ public class NewEventInvitesView implements PrintableInterface<Boolean> {
     public Boolean parseInput() {
         Character userInput;
         do {
-            userInput = InputManager.inputChar(menuTranslation.getTranslation("sendInvite"), true);
+            userInput = InputManager.inputChar(translation.getTranslation("sendInvite"), true);
             if (userInput != null && userInput != 'S' && userInput != 'N')
                 userInput = null;
         } while (userInput == null);

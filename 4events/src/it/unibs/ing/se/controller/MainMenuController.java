@@ -12,12 +12,12 @@ import it.unibs.ing.se.view.inputwrappers.EventInput;
 import java.util.UUID;
 
 public class MainMenuController implements ControllerInterface<MainCommand> {
-    private JsonTranslator menuTranslation;
+    private JsonTranslator translation;
     private LoginHelper loginHelper;
     private UUID currentUserID;
 
     public MainMenuController() {
-        this.menuTranslation = new JsonTranslator(JsonTranslator.MENU_JSON_PATH);
+        this.translation = JsonTranslator.getInstance();
         this.loginHelper = new LoginHelper();
     }
 
@@ -37,7 +37,7 @@ public class MainMenuController implements ControllerInterface<MainCommand> {
     public void perform(MainCommand selection) {
         switch (selection) {
             case INVALID:
-                System.err.println(menuTranslation.getTranslation("invalidUserSelection"));
+                System.err.println(translation.getTranslation("invalidUserSelection"));
                 break;
             case DASHBOARD:
                 DashboardView dashboardView = new DashboardView();
@@ -73,7 +73,7 @@ public class MainMenuController implements ControllerInterface<MainCommand> {
                 break;
             case QUIT:
                 Connector.getInstance().closeDb();
-                System.out.println(menuTranslation.getTranslation("exit"));
+                System.out.println(translation.getTranslation("exit"));
                 System.exit(0);
                 break;
         }
