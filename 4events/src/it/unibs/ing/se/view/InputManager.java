@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,9 +43,9 @@ public class InputManager {
         } else if (type.equals(Duration.class)) {
             return (T) inputDuration(inputDescription, inline);
         } else if (type.equals(Sex.class)) {
-            return (T) Sex.sexInput(inputDescription, inline);
+            return (T) sexInput(inputDescription, inline);
         } else if (type.equals(OptionalCost.class)) {
-            return (T) OptionalCost.optionalCostInput(inputDescription, inline);
+            return (T) optionalCostInput(inputDescription, inline);
         } else {
             throw new IllegalArgumentException("ALERT: Unexpected input type: " + type);
         }
@@ -230,5 +231,33 @@ public class InputManager {
         }
 
         return intNumbers;
+    }
+
+    static public OptionalCost optionalCostInput(String inputDescription, boolean inline) {
+        Character userInput;
+        Integer amount = 0;
+        do {
+            userInput= inputChar(inputDescription + " (S|N)", inline);
+            if (userInput == null) {
+                return null;
+            } else if (userInput == 'S') {
+                amount = inputInteger("Cost (€)", true);
+            }
+        } while (! (userInput == 'S' || userInput == 'N'));
+        if (userInput == 'S') {
+            return new OptionalCost(UUID.randomUUID(), amount);
+        } else {
+            return null;
+        }
+    }
+
+    static public Sex sexInput (String inputDescription, boolean inline) {
+        Character userInput;
+        do {
+            userInput = inputChar(inputDescription + " (" + Sex.MALE + "|" + Sex.FEMALE + ")", inline);
+            if (userInput == null)
+                return null;
+        } while (! (userInput.equals(Sex.MALE) || userInput.equals(Sex.FEMALE)) );
+        return new Sex(userInput);
     }
 }

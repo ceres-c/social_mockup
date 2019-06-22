@@ -1,6 +1,5 @@
 package it.unibs.ing.se.view.inputwrappers;
 
-import it.unibs.ing.se.model.ReflectionInterface;
 import it.unibs.ing.se.model.fields.OptionalCost;
 
 import java.lang.reflect.Field;

@@ -124,7 +124,6 @@ public class EventHelper {
      * This method iterates over all the active events in the database and check if any needs to be updated.
      * If so it proceeds to update it and save it back into the database with its updated status.
      * If the new status require to send notifications to user it does so.
-     * @throws SQLException If a database access error occurs
      */
     public void updateAllEvents() {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");

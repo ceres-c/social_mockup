@@ -34,7 +34,7 @@ public class SignUpView implements PrintableInterface<UserCore> {
         String hashedPassword = CryptoHelper.SHA512PasswordHash(password, salt);
         java.util.Arrays.fill(password, ' '); // It will still be somewhere in memory due to Java's Almighty Garbage Collector (TM), but at least we tried.
 
-        while ((gender = Sex.sexInput(translation.getTranslation("genderInput"), true)) == null);
+        while ((gender = InputManager.sexInput(translation.getTranslation("genderInput"), true)) == null);
         age = InputManager.inputInteger(translation.getTranslation("ageInput"), true);
         age = (age == null ? 0 : age); // age defaults to 0
 

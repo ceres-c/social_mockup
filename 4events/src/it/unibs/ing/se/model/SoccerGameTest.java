@@ -36,9 +36,8 @@ class SoccerGameTest {
     void registerUser() {
         final String username = "user001";
         final char[] password = {'i', 'l', 'o', 'v', 'e', 'y', 'o', 'u'}; // rockyou.txt docet
-        CryptoHelper crypto = new CryptoHelper();
-        byte[] salt = crypto.charArrayToByteArray(username.toCharArray());
-        String hashedPassword = crypto.SHA512PasswordHash(password, salt);
+        byte[] salt = CryptoHelper.charArrayToByteArray(username.toCharArray());
+        String hashedPassword = CryptoHelper.SHA512PasswordHash(password, salt);
         final Sex gender = new Sex("M");
         final Integer age = 25;
         User user = new User(username, hashedPassword, gender, age, null); // favoriteCategories not specified

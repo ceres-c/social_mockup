@@ -33,8 +33,8 @@ public class HelpView {
         String internalCatName;
         int maxLength;
 
-        for (int i = 0; i < categories.size(); i++) {
-            internalCatName = categories.get(i);
+        for (String category : categories) {
+            internalCatName = category;
             maxLength = 0;
 
             System.out.println(translation.getName(internalCatName) + " - " + translation.getDescr(internalCatName));
@@ -45,10 +45,10 @@ public class HelpView {
 
             Iterator iterator = eventFieldsMap.entrySet().iterator(); // Get an iterator for our map
 
-            while(iterator.hasNext()) {
-                Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+            while (iterator.hasNext()) {
+                Map.Entry entry = (Map.Entry) iterator.next(); // Casts the iterated item to a Map Entry to use it as such
 
-                int length = translation.getName((String)entry.getKey()).length();
+                int length = translation.getName((String) entry.getKey()).length();
                 if (length > maxLength)
                     maxLength = length; // ...find the longest
             }
@@ -57,9 +57,9 @@ public class HelpView {
             iterator = eventFieldsMap.entrySet().iterator(); // Reset to first element
             StringBuffer outputBuffer = new StringBuffer();
 
-            while(iterator.hasNext()) {
-                Map.Entry entry = (Map.Entry)iterator.next(); // Casts the iterated item to a Map Entry to use it as such
-                String field = (String)entry.getKey();
+            while (iterator.hasNext()) {
+                Map.Entry entry = (Map.Entry) iterator.next(); // Casts the iterated item to a Map Entry to use it as such
+                String field = (String) entry.getKey();
 
                 outputBuffer.append("  ");
                 outputBuffer.append(translation.getName(field));

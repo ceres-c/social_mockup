@@ -42,7 +42,7 @@ class UserDatabaseInteractionTest {
         try {
             assertTrue(myConnector.insertUser(user1));
         } catch (SQLException e) {
-            assertTrue(false); // The test fails if an exception is thrown
+            fail(); // The test fails if an exception is thrown
         }
     }
 
@@ -52,7 +52,7 @@ class UserDatabaseInteractionTest {
             myConnector.login(username, hashedPassword);
             assertTrue(true); // If no exception is thrown this test is fine
         } catch (SQLException e) {
-            assertTrue(false); // The test fails if an exception is thrown
+            fail(); // The test fails if an exception is thrown
         }
     }
 

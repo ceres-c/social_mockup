@@ -207,7 +207,7 @@ public abstract class Event implements LegalObject, ReflectionInterface {
      * A method to set an object as published.
      * updateState should be called afterwards to check for differences and update the database accordingly
      * @throws IllegalStateException If called on an event which is non-legal
-     * @param currentDateTime
+     * @param currentDateTime LocalDateTime object with the date to check against if status has to be updated or not
      */
     public void publish(LocalDateTime currentDateTime) throws IllegalStateException {
         if (!this.published && !isLegal(currentDateTime))

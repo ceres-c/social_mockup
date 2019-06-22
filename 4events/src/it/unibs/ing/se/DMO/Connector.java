@@ -40,7 +40,7 @@ public class Connector {
     private final static String UPDATE_NOTIFICATION_READ = "UPDATE public.eventNotifications SET read = ? WHERE notificationID = ?";
     private final static String INSERT_NOTIFICATION = "INSERT INTO public.eventnotifications values (?, ?, ?, ?, ?, ?)";
 
-    private Connection dbConnection = null;
+    private Connection dbConnection;
 
     private static Connector singleInstance;
 
@@ -115,9 +115,8 @@ public class Connector {
      */
     public UUID login(String username, String hashedPassword) throws IllegalStateException, IllegalArgumentException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
-        String query = LOGIN;
 
-        PreparedStatement loginStatement = dbConnection.prepareStatement(query);
+        PreparedStatement loginStatement = dbConnection.prepareStatement(LOGIN);
         loginStatement.setString(1, username);
         loginStatement.setString(2, hashedPassword);
         ResultSet rs = loginStatement.executeQuery();
@@ -139,10 +138,9 @@ public class Connector {
      */
     public User getUser(UUID userID) throws IllegalStateException, IllegalArgumentException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
-        String query = GET_USER;
         User returnUser;
 
-        PreparedStatement getUserStatement = dbConnection.prepareStatement(query);
+        PreparedStatement getUserStatement = dbConnection.prepareStatement(GET_USER);
         getUserStatement.setString(1, userID.toString());
         ResultSet rs = getUserStatement.executeQuery();
 
@@ -403,11 +401,11 @@ public class Connector {
             } else if (type.equals(String.class)) {
                 addEventStatement.setString(parameterIndex, entry.getValue().toString());
             } else if (type.equals(LocalDateTime.class)) {
-                addEventStatement.setObject(parameterIndex, (LocalDateTime) entry.getValue()); // Postgresql driver natively supports LocalDateTime
+                addEventStatement.setObject(parameterIndex, entry.getValue()); // Postgresql driver natively supports LocalDateTime
             } else if (type.equals(Duration.class)) {
                 addEventStatement.setLong(parameterIndex, ((Duration) entry.getValue()).getSeconds());
             } else if (type.equals(Sex.class)) {
-                addEventStatement.setString(parameterIndex, ((Sex) entry.getValue()).toString());
+                addEventStatement.setString(parameterIndex, entry.getValue().toString());
             } else if (type.equals(OptionalCost.class)) {
                 addEventStatement.setString(parameterIndex, ((OptionalCost) entry.getValue()).getCostID().toString()); // OptionalCost ID
                 parameterIndex++;
@@ -795,7 +793,7 @@ public class Connector {
     public Event getEvent(UUID eventID) throws IllegalStateException, NoSuchElementException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 
-        Event event = null;
+        Event event;
         EventFactory eFactory = new EventFactory();
 
         String eventType = this.getEventType(eventID);

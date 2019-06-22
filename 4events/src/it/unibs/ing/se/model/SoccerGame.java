@@ -84,7 +84,7 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
      * @return boolean:
      *      - True if legal
      * @throws IllegalStateException if user input isn't legal
-     * @param currentDate
+     * @param currentDate LocalDateTime object with the date to check against if status has to be updated or not
      */
     public boolean isLegal(LocalDateTime currentDate) throws IllegalStateException {
         super.isLegal(currentDate);

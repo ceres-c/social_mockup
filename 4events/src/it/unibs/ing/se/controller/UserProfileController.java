@@ -3,7 +3,6 @@ package it.unibs.ing.se.controller;
 import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.model.User;
 import it.unibs.ing.se.model.UserCore;
-import it.unibs.ing.se.model.fields.Sex;
 
 import java.sql.SQLException;
 import java.util.UUID;

@@ -1,29 +1,21 @@
 package it.unibs.ing.se.model.fields;
 
-import it.unibs.ing.se.view.InputManager;
-
 public class Sex {
-    private static final Character MALE = 'M';
-    private static final Character FEMALE = 'F';
+    public static final Character MALE = 'M';
+    public static final Character FEMALE = 'F';
 
     private char sex;
 
-    public Sex (Character sex) {
+    public Sex (Character sex) throws IllegalStateException {
+        if (sex != MALE || sex != FEMALE)
+            throw new IllegalArgumentException("Illegal input " + sex);
         this.sex = sex;
     }
 
     public Sex (String sex) {
+        if (sex.charAt(0) != MALE || sex.charAt(0) !=FEMALE)
+            throw new IllegalArgumentException("Illegal input " + sex.charAt(0));
         this.sex = sex.charAt(0);
-    }
-
-    static public Sex sexInput (String inputDescription, boolean inline) {
-        Character userInput;
-        do {
-            userInput = InputManager.inputChar(inputDescription + " (" + MALE + "|" + FEMALE + ")", inline);
-            if (userInput == null)
-                return null;
-        } while (! (userInput.equals(MALE) || userInput.equals(FEMALE)) );
-        return new Sex(userInput);
     }
 
     public char getSex() {

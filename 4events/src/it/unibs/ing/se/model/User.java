@@ -62,7 +62,7 @@ public class User extends UserCore {
                 getHashedPassword().equals(user.getHashedPassword()) &&
                 getGender().equals(user.getGender()) &&
                 Objects.equals(getAge(), user.getAge()) &&
-                Objects.equals(getFavoriteCategories(), user.getFavoriteCategories());
+                Arrays.equals(getFavoriteCategories(), user.getFavoriteCategories());
     }
 
     @Override

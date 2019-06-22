@@ -1,14 +1,14 @@
 package it.unibs.ing.se.model.fields;
 
-import it.unibs.ing.se.view.InputManager;
-
 import java.util.UUID;
 
 public class OptionalCost {
-    UUID costID;
-    Integer costAmount;
+    private UUID costID;
+    private Integer costAmount;
 
     public OptionalCost(UUID costID, Integer costAmount) {
+        if (costAmount < 0)
+            throw new IllegalArgumentException("Illegal input: " + costAmount);
         this.costID = costID;
         this.costAmount = costAmount;
     }
@@ -16,24 +16,6 @@ public class OptionalCost {
     public UUID getCostID() { return costID; }
 
     public Integer getCostAmount() { return costAmount; }
-
-    static public OptionalCost optionalCostInput (String inputDescription, boolean inline) {
-        Character userInput;
-        Integer amount = 0;
-        do {
-            userInput= InputManager.inputChar(inputDescription + " (S|N)", inline);
-            if (userInput == null) {
-                return null;
-            } else if (userInput == 'S') {
-                amount = InputManager.inputInteger("Cost (€)", true);
-            }
-        } while (! (userInput == 'S' || userInput == 'N'));
-        if (userInput == 'S') {
-            return new OptionalCost(UUID.randomUUID(), amount);
-        } else {
-            return null;
-        }
-    }
 
     /**
      * This stripped down toString method allows to print these costs as any other field,

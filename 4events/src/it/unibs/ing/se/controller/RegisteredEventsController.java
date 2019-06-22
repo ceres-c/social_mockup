@@ -9,7 +9,6 @@ import java.util.UUID;
 
 public class RegisteredEventsController implements ControllerInterface<EventCommand> {
     protected JsonTranslator translation;
-    private Connector dbConnection;
     private UUID eventID;
     private UUID userID;
 
@@ -17,12 +16,6 @@ public class RegisteredEventsController implements ControllerInterface<EventComm
         this.translation = JsonTranslator.getInstance();
         this.eventID = eventID;
         this.userID = userID;
-        try {
-            dbConnection = Connector.getInstance();
-        } catch (IllegalStateException e) {
-            System.err.println(translation.getTranslation("SQLError"));
-            System.exit(1);
-        }
     }
 
     @Override
