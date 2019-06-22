@@ -80,6 +80,7 @@ class SoccerGameTest {
     @Test
     void StateOpen() {
         event.updateState(LocalDateTime.now()); // UNKNOWN -> VALID
+        event.publish(currentDate);
         Assertions.assertAll(
                 () -> assertTrue(event.updateState(LocalDateTime.parse("2019-12-01T09:00:00"))), // Same date, 1 hour before the registrationDeadline
                 () -> assertEquals(event.getCurrentStateAsString(), "OPEN")
