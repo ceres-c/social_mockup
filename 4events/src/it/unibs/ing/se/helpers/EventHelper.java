@@ -1,4 +1,4 @@
-package it.unibs.ing.se.controller.helpers;
+package it.unibs.ing.se.helpers;
 
 import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonTranslator;

@@ -2,8 +2,8 @@ package it.unibs.ing.se.controller;
 
 import it.unibs.ing.se.DMO.Connector;
 import it.unibs.ing.se.DMO.JsonTranslator;
-import it.unibs.ing.se.controller.helpers.EventHelper;
-import it.unibs.ing.se.controller.helpers.NotificationHelper;
+import it.unibs.ing.se.helpers.EventHelper;
+import it.unibs.ing.se.helpers.NotificationHelper;
 import it.unibs.ing.se.model.Event;
 import it.unibs.ing.se.model.EventFactory;
 import it.unibs.ing.se.view.NewEventInvitesView;

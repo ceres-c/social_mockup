@@ -1,4 +1,4 @@
-package it.unibs.ing.se.controller.helpers;
+package it.unibs.ing.se.helpers;
 
 import it.unibs.ing.se.controller.LoginSignupController;
 import it.unibs.ing.se.view.LoginSignupView;

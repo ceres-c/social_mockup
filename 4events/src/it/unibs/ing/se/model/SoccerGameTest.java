@@ -1,6 +1,6 @@
 package it.unibs.ing.se.model;
 
-import it.unibs.ing.se.controller.helpers.CryptoHelper;
+import it.unibs.ing.se.helpers.CryptoHelper;
 import it.unibs.ing.se.model.fields.Sex;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

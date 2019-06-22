@@ -56,5 +56,101 @@
   "nobodyRegisteredToYourEvents" : "ATTENZIONE: Nessun invito è stato inviato in quanto nessun utente si è mai iscritto in precedenza ai tuoi eventi",
   "nobodyInterestedInThisCategory" : "ATTENZIONE: Nessuna è stata inviata in quanto nessun utente è interessato agli eventi della categoria scelta",
   "eventCreationSexMismatch" : "ATTENZIONE: L'evento è stato creato correttamente, ma è riservato a partecipanti di un sesso diverso da quello dell'utente corrente.\nL'utente non può dunque essere registrato come partecipante, ma potrà comunque amministrare l'evento.",
-  "eventCreationAgeMismatch" : "ATTENZIONE: L'evento è stato creato correttamente, ma è riservato a partecipanti di una fascia d'età differente da quella dell'utente corrente.\nL'utente non può dunque essere registrato come partecipante, ma potrà comunque amministrare l'evento."
+  "eventCreationAgeMismatch" : "ATTENZIONE: L'evento è stato creato correttamente, ma è riservato a partecipanti di una fascia d'età differente da quella dell'utente corrente.\nL'utente non può dunque essere registrato come partecipante, ma potrà comunque amministrare l'evento.",
+  "state" : {
+    "name"  : "Stato",
+    "descr" : "Stato in cui si trova attualmente la proposta"
+  },
+  "creator" : {
+    "name"  : "Creatore dell'evento",
+    "descr" : "Utente che ha creato l'evento e lo può amministrare"
+  },
+  "soccer_game" : {
+    "name"  : "Partita di calcio",
+    "descr" : "Sport più pagato al mondo che consiste nel rincorrere un pezzo di cuoio"
+  },
+  "mountain_hiking" : {
+    "name"  : "Camminata in montagna",
+    "descr" : "Amena camminata tra i monti con le caprette che fanno ciao"
+  },
+  "title" : {
+    "name"  : "Titolo",
+    "descr" : "Nome di fantasia attribuito all'evento"
+  },
+  "participantsMin" : {
+    "name"  : "Partecipanti minimi",
+    "descr" : "Numero minimo di persone necessarie per realizzare l'evento"
+  },
+  "participantsSurplus" : {
+    "name"  : "Partecipanti aggiuntivi",
+    "descr" : "Numero di persone che possono eventualmente aggiungersi una volta raggiunto il minimo"
+  },
+  "registrationDeadline" : {
+    "name"  : "Termine d'iscrzione",
+    "descr" : "Data ultima per effetuare l'iscrizione all'evento"
+  },
+  "location" : {
+    "name"  : "Luogo",
+    "descr" : "Luogo che ospiterà l'evento"
+  },
+  "startDate" : {
+    "name"  : "Data ed ora d'inizio",
+    "descr" : "Istante in cui avrà inizio l'evento"
+  },
+  "duration" : {
+    "name"  : "Durata",
+    "descr" : "Durata dell'evento"
+  },
+  "deregistrationDeadline" : {
+    "name"  : "Termine di ritiro iscrizione",
+    "descr" : "Data ultima per annullare l'iscrizione all'evento"
+  },
+  "cost" : {
+    "name"  : "Costo (€)",
+    "descr" : "Quota individuale d'iscrizione"
+  },
+  "inQuota" : {
+    "name"  : "Compreso nel prezzo",
+    "descr" : "Voci di spesa incluse nella quota d'iscrizione"
+  },
+  "endDate" : {
+    "name"  : "Data ed ora conclusiva",
+    "descr" : "Istante in cui avrà termine l'evento"
+  },
+  "notes" : {
+    "name"  : "Note",
+    "descr" : "Informazioni aggiuntive"
+  },
+  "gender" : {
+    "name"  : "Sesso",
+    "descr" : "Genere dei giocatori"
+  },
+  "ageMin" : {
+    "name"  : "Età minima",
+    "descr" : "Soglia minima d'età per partecipare"
+  },
+  "ageMax" : {
+    "name"  : "Età massima",
+    "descr" : "Soglia massima d'età per partecipare"
+  },
+  "length" : {
+    "name"  : "Lunghezza (km)",
+    "descr" : "Lunghezza del percorso (in km)"
+  },
+  "heightDiff" : {
+    "name"  : "Dislivello (m)",
+    "descr" : "Dislivello totale, somma di salita e discesa (in m)"
+  },
+  "coach" : {
+    "name"  : "Autobus",
+    "descr" : "Viaggio in autobus fino alla destinazione"
+  },
+  "lodge" : {
+    "name"  : "Rifugio",
+    "descr" : "Soggiorno in rifugio"
+  },
+  "lunch" : {
+    "name"  : "Pranzo",
+    "descr" : "Pasto caldo in rifugio"
+  }
 }

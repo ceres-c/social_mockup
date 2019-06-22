@@ -7,13 +7,13 @@ public class Sex {
     private char sex;
 
     public Sex (Character sex) throws IllegalStateException {
-        if (sex != MALE || sex != FEMALE)
+        if (sex != MALE && sex != FEMALE)
             throw new IllegalArgumentException("Illegal input " + sex);
         this.sex = sex;
     }
 
     public Sex (String sex) {
-        if (sex.charAt(0) != MALE || sex.charAt(0) !=FEMALE)
+        if (sex.charAt(0) != MALE && sex.charAt(0) != FEMALE)
             throw new IllegalArgumentException("Illegal input " + sex.charAt(0));
         this.sex = sex.charAt(0);
     }
