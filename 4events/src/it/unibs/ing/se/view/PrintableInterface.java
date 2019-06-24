@@ -3,7 +3,7 @@ package it.unibs.ing.se.view;
 public interface PrintableInterface<T> {
 
     /**
-     * Prints the it.unibs.ing.se.view to the user
+     * Prints the view to the user
      */
     void print();
 

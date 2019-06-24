@@ -56,20 +56,20 @@ class UserDatabaseInteractionTest {
         }
     }
 
-    /*
+
     @Test
     void userEquals() {
         System.out.println(user1.getUserIDAsString());
+        UUID userID = null;
         User dbUser = null;
         try {
-            dbUser = myConnector.login(username, hashedPassword); // TODO get User object with database getter
-            //System.out.println(dbUser.getUserID());
+            userID = myConnector.login(username, hashedPassword);
+            dbUser = myConnector.getUser(userID);
         } catch (SQLException e) {
-            assertTrue(false); // The test fails if an exception is thrown
+            fail(); // The test fails if an exception is thrown
         }
         assertTrue(user1.equals(dbUser));
     }
-    */
 
 
     /**

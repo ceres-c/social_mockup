@@ -13,7 +13,9 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-// TODO specify it's a singleton
+/**
+ * Singleton class used to connect to the database and save/fetch data from it.
+ */
 public class Connector {
     private final static String LOGIN = "SELECT userID FROM public.users WHERE username = ? AND hashedPassword = ?";
     private final static String GET_USER = "SELECT * FROM public.users WHERE userID = ?";
@@ -195,7 +197,13 @@ public class Connector {
             throw new SQLException("ALERT: Error adding user to the database!\nSQL INSERT query returned " + i);
     }
 
-    // TODO method description
+    /**
+     * Updates mutable data of an already existing User identified by its userID
+     * @param user User object with updated data
+     * @return True if everything went smoothly
+     * @throws IllegalStateException If called before a database connection is established
+     * @throws SQLException Directly from SQL driver if something else bad happens
+     */
     public boolean updateUser(User user) throws IllegalStateException, SQLException {
         if (dbConnection == null) throw new IllegalStateException("ALERT: No connection to the database");
 

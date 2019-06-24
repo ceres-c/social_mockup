@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Nested class that's used to store the JSONObject representation of the configuration on disk.
+ * Class used to store the JSONObject representation of the configuration on disk.
  */
 public class JsonConfigReader {
     JSONObject jsonContent;

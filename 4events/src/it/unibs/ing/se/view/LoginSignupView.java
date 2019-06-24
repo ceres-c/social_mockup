@@ -5,7 +5,6 @@ import it.unibs.ing.se.DMO.JsonTranslator;
 public class LoginSignupView implements PrintableInterface<Integer> {
     private JsonTranslator translation;
 
-    // TODO method description
     public LoginSignupView() {
         this.translation = JsonTranslator.getInstance();
     }

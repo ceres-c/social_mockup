@@ -187,12 +187,14 @@ public abstract class Event implements LegalObject, ReflectionInterface {
     public String getCurrentStateAsString() { return this.currentState.name(); }
 
     /**
-     * // TODO method description
+     * Marks an OPEN event as withdrawn
+     * @throws IllegalStateException If the event isn't in OPEN state
      */
-    public void setEventWithdrawn () {
+    public void setEventWithdrawn () throws IllegalStateException {
+        if (currentState != State.OPEN)
+            throw new IllegalStateException("Invalid state transition");
         this.currentState = State.WITHDRAWN;
-    } // TODO se lo stato non è OPEN, throw exception
-
+    }
     /**
      * Setter that has to be used ONLY to restore an event from the database. For normal operation use updateState.
      * @param state String version of a status from Event.State enum
