@@ -62,7 +62,7 @@ public class SoccerGame extends Event implements LegalObject, ReflectionInterfac
     }
 
     /**
-     * A method to save an UserID into the Event object to keep track of registered users
+     * A method to save a UserID into the Event object to keep track of registered users
      * @param user A User object from which the UserID will be taken
      * @return True if registration was successful
      * @throws IllegalStateException If the event has already reached maximum number of registered users
